@@ -42,6 +42,9 @@ public class Movie {
     @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
     private List<Screening> screenings;
 
+    @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
+    private List<Images> images;
+
     @PrePersist
     public void handleBeforeCreated(){
       

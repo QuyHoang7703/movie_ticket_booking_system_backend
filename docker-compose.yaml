@@ -11,7 +11,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      - MYSQL_URL=jdbc:mysql://db:3306/bookingmovie
+      - MYSQL_URL=jdbc:mysql://db:3306/movie_ticket_booking
     develop:
       watch:
         - action: rebuild
@@ -23,13 +23,13 @@ services:
       - mysql-db-data:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD=admin123
-      - MYSQL_DATABASE=bookingmovie
-      - MYSQL_USER=bookingmovie
-      - MYSQL_PASSWORD=bookingmovie
+      - MYSQL_DATABASE=movie_ticket_booking
+      - MYSQL_USER=movie_ticket_booking
+      - MYSQL_PASSWORD=movie_ticket_booking
     ports:
-      - 3307:3306
+      - 3309:3306
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "bookingmovie", "--password=bookingmovie"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "movie_ticket_booking", "--password=movie_ticket_booking"]
       interval: 10s
       timeout: 5s
       retries: 5
