@@ -8,13 +8,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
+import com.bytecinema.MovieTicketBookingSystem.domain.dto.RegisterDTO;
+import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResUserDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 import com.bytecinema.MovieTicketBookingSystem.util.annatiation.ApiMessage;
+import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 
 @RestController
+@RequestMapping("api/v1")
 public class UserController {
     private final UserService userService;
     private PasswordEncoder passwordEncoder;
@@ -24,11 +29,18 @@ public class UserController {
     }
 
     @PostMapping("/users")
-    @ApiMessage("Create a new user")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        String hashPassword = this.passwordEncoder.encode(user.getPassword());
-        user.setPassword(hashPassword);
-        return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.handleCreateUser(user));
+    @ApiMessage("Register a new user")
+    public ResponseEntity<ResUserDTO> createUser(@RequestBody RegisterDTO registerDTO) throws IdInValidException{
+        if(this.userService.checkAvailableEmail(registerDTO.getEmail())){
+            throw new IdInValidException("Email already exist, please use another one");
+        }
+        if(!registerDTO.getPassword().equals(registerDTO.getConfirmPassword())){
+            throw new IdInValidException("Password and Confirm Password do not match");
+        }
+        String hashPassword = this.passwordEncoder.encode(registerDTO.getPassword());
+        registerDTO.setPassword(hashPassword);
+        User newUser = this.userService.handleCreateUser(registerDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResUserRegister(newUser));
     }
 
     @GetMapping("/users/{id}")
