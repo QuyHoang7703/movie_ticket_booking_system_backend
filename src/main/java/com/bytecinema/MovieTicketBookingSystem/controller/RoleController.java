@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.RoleDTO;
+import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResRoleDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.RoleService;
 
 @RestController
@@ -21,10 +21,10 @@ public class RoleController {
     }
 
     @PostMapping("/roles")
-    public ResponseEntity<RoleDTO> createRole(@RequestBody Role role) {
-        this.roleService.handleCreateRole(role);
-        RoleDTO roleDTO = new RoleDTO();
-        roleDTO.setName(role.getName());
+    public ResponseEntity<ResRoleDTO> createRole(@RequestBody String roleName) {
+        this.roleService.handleCreateRole(roleName);
+        ResRoleDTO roleDTO = new ResRoleDTO();
+        roleDTO.setName(roleName);
         return ResponseEntity.status(HttpStatus.OK).body(roleDTO);
     }
 

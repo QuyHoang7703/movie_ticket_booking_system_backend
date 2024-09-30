@@ -1,5 +1,7 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
@@ -10,15 +12,22 @@ import com.bytecinema.MovieTicketBookingSystem.repository.RoleRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.Random;
 @Service
 public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-
-    public UserService(UserRepository userRepository, RoleRepository roleRepository) {
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    public UserService(UserRepository userRepository, RoleRepository roleRepository,
+                         PasswordEncoder passwordEncoder, EmailService emailService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     public User handleCreateUser(RegisterDTO registerDTO) throws IdInValidException{
@@ -31,8 +40,15 @@ public class UserService {
         user.setEmail(registerDTO.getEmail());
         user.setPassword(registerDTO.getPassword());
         user.setRole(role);
+        user.setOtpExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
+        String otp = this.generateOTP();
+        user.setOtp(otp);
+        //Send OTP to email register
+        this.sendVerificationEmail(registerDTO.getEmail(), otp);
+
         // Add attribute of user
         return this.userRepository.save(user);
+
     }
 
     public User fetchUserById(long id) {
@@ -43,9 +59,6 @@ public class UserService {
         return null;
     }
  
-    // public User fetchUserByEmail(String email) {
-    //     return this.userRepository.findByEmail(email);
-    // }
 
     public void handleDeleteUser(long id) {
         this.userRepository.deleteById(id);
@@ -90,5 +103,38 @@ public class UserService {
         resUser.setAvatar(user.getAvatar());
     
         return resUser;
+    }
+
+    private String generateOTP() {
+        Random random = new Random();
+        int otpValue = 100000 + random.nextInt(900000);
+        String otpDecoded = this.passwordEncoder.encode(String.valueOf(otpValue));
+        return otpDecoded;
+    }
+
+    public void sendVerificationEmail(String email, String otp) {
+        String subject = "Email verification";
+        String body = "Your verification OTP is: " + otp;
+        this.emailService.sendEmail(email, subject, body);
+    }
+
+    public void verify(String email, String otp) throws IdInValidException{
+        Optional<User> optionalUser = this.userRepository.findByEmail(email);
+        if(optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            boolean isValidOtp = this.passwordEncoder.matches(otp, user.getOtp());
+            boolean isOtpExpired = Instant.now().isAfter(user.getOtpExpirationTime());
+            if(isValidOtp && !isOtpExpired){
+                user.setVerified(true);
+                this.userRepository.save(user);
+            }else {
+                throw new IdInValidException("OTP is expired");
+            }
+        }
+    }
+
+    public void resendOtp(String email) {
+        String otp = this.generateOTP();
+        this.sendVerificationEmail(email, otp);
     }
 }

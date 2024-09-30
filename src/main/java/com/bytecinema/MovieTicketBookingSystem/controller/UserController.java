@@ -28,20 +28,20 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @PostMapping("/users")
-    @ApiMessage("Register a new user")
-    public ResponseEntity<ResUserDTO> createUser(@RequestBody RegisterDTO registerDTO) throws IdInValidException{
-        if(this.userService.checkAvailableEmail(registerDTO.getEmail())){
-            throw new IdInValidException("Email already exist, please use another one");
-        }
-        if(!registerDTO.getPassword().equals(registerDTO.getConfirmPassword())){
-            throw new IdInValidException("Password and Confirm Password do not match");
-        }
-        String hashPassword = this.passwordEncoder.encode(registerDTO.getPassword());
-        registerDTO.setPassword(hashPassword);
-        User newUser = this.userService.handleCreateUser(registerDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResUserRegister(newUser));
-    }
+    // @PostMapping("/users")
+    // @ApiMessage("Register a new user")
+    // public ResponseEntity<ResUserDTO> createUser(@RequestBody RegisterDTO registerDTO) throws IdInValidException{
+    //     if(this.userService.checkAvailableEmail(registerDTO.getEmail())){
+    //         throw new IdInValidException("Email already exist, please use another one");
+    //     }
+    //     if(!registerDTO.getPassword().equals(registerDTO.getConfirmPassword())){
+    //         throw new IdInValidException("Password and Confirm Password do not match");
+    //     }
+    //     String hashPassword = this.passwordEncoder.encode(registerDTO.getPassword());
+    //     registerDTO.setPassword(hashPassword);
+    //     User newUser = this.userService.handleCreateUser(registerDTO);
+    //     return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResUserRegister(newUser));
+    // }
 
     @GetMapping("/users/{id}")
     @ApiMessage("Fetch user by ID")
