@@ -36,6 +36,10 @@ public class User {
     private String refreshToken;
     private Instant createAt;
     private Instant updateAt;
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String otp;
+    private Instant otpExpirationTime;
+    private boolean verified;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
