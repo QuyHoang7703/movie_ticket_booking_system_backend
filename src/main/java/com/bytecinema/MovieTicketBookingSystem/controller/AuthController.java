@@ -25,6 +25,7 @@ import com.bytecinema.MovieTicketBookingSystem.domain.dto.LoginDTO;
 import com.bytecinema.MovieTicketBookingSystem.domain.dto.RegisterDTO;
 import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResLoginDTO;
 import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResUserDTO;
+import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResponseMessage;
 import com.bytecinema.MovieTicketBookingSystem.domain.dto.VerifyDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
@@ -62,28 +63,28 @@ public class AuthController {
         }
         String hashPassword = this.passwordEncoder.encode(registerDTO.getPassword());
         registerDTO.setPassword(hashPassword);
-        User newUser = this.userService.handleCreateUser(registerDTO);
+        User newUser = this.userService.handleRegisterUser(registerDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResUserRegister(newUser));
     }
 
     @PostMapping("/auth/verify")
-    public ResponseEntity<Object> verify(@RequestBody VerifyDTO verifyDTO) throws IdInValidException{
+    public ResponseEntity<ResponseMessage> verify(@RequestBody VerifyDTO verifyDTO) throws IdInValidException{
         if(!this.userService.checkAvailableEmail(verifyDTO.getEmail())){
             throw new IdInValidException("Email not found");
         }
         this.userService.verify(verifyDTO.getEmail(), verifyDTO.getOtp());
         
-        return ResponseEntity.ok("Verify successful");
+        return ResponseEntity.ok(new ResponseMessage("Verified successful"));
     }
 
-    @PostMapping("/auth/resend_OTP")
-    public ResponseEntity<Object> resendOTP(@RequestBody String email) throws IdInValidException{
-        if(!this.userService.checkAvailableEmail(email)){
-            throw new IdInValidException("Email not found");
-        }
+    @PostMapping("/auth/resend")
+    public ResponseEntity<ResponseMessage> resendOTP(@RequestParam String email) throws IdInValidException{
+        // if(this.userService.checkAvailableEmail(email)){
+        //     throw new IdInValidException("Email not found");
+        // }
         this.userService.resendOtp(email);
-        
-        return ResponseEntity.ok("Verify successful");
+        return ResponseEntity.ok(new ResponseMessage("Resend OTP"));
+
     }
 
 

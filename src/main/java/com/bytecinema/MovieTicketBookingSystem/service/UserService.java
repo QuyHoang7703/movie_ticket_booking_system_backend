@@ -30,7 +30,7 @@ public class UserService {
         this.emailService = emailService;
     }
 
-    public User handleCreateUser(RegisterDTO registerDTO) throws IdInValidException{
+    public User handleRegisterUser(RegisterDTO registerDTO) throws IdInValidException{
         Optional<Role> optionalRole = this.roleRepository.findById(registerDTO.getRoleId());
         if(!optionalRole.isPresent()) {
             throw new IdInValidException("Role is invalid");
@@ -42,7 +42,9 @@ public class UserService {
         user.setRole(role);
         user.setOtpExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
         String otp = this.generateOTP();
-        user.setOtp(otp);
+        
+        String otpDecoded = this.passwordEncoder.encode(otp);
+        user.setOtp(otpDecoded);
         //Send OTP to email register
         this.sendVerificationEmail(registerDTO.getEmail(), otp);
 
@@ -108,8 +110,8 @@ public class UserService {
     private String generateOTP() {
         Random random = new Random();
         int otpValue = 100000 + random.nextInt(900000);
-        String otpDecoded = this.passwordEncoder.encode(String.valueOf(otpValue));
-        return otpDecoded;
+        
+        return String.valueOf(otpValue);
     }
 
     public void sendVerificationEmail(String email, String otp) {
@@ -126,6 +128,8 @@ public class UserService {
             boolean isOtpExpired = Instant.now().isAfter(user.getOtpExpirationTime());
             if(isValidOtp && !isOtpExpired){
                 user.setVerified(true);
+                user.setOtp(null);
+                user.setOtpExpirationTime(null);
                 this.userRepository.save(user);
             }else {
                 throw new IdInValidException("OTP is expired");
@@ -135,6 +139,14 @@ public class UserService {
 
     public void resendOtp(String email) {
         String otp = this.generateOTP();
+        String otpDecoded = this.passwordEncoder.encode(otp);
+        Optional<User> optionalUser = this.userRepository.findByEmail(email);
+        if(optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            user.setOtp(otpDecoded);
+            user.setOtpExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
+            this.userRepository.save(user);
+        }
         this.sendVerificationEmail(email, otp);
     }
 }
