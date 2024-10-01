@@ -45,7 +45,7 @@ public class UserController {
 
     @GetMapping("/users/{id}")
     @ApiMessage("Fetch user by ID")
-    public ResponseEntity<User> fecthUserByID(@PathVariable("id") long id) {
+    public ResponseEntity<User> fetchUserByID(@PathVariable("id") long id) {
         return ResponseEntity.status(HttpStatus.OK).body(this.userService.fetchUserById(id));
     }
 
