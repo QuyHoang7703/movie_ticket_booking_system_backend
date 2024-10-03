@@ -1,40 +1,39 @@
-// package com.bytecinema.MovieTicketBookingSystem.config;
-// import java.util.Arrays;
+package com.bytecinema.MovieTicketBookingSystem.config;
+import java.util.Arrays;
 
-// import org.springframework.context.annotation.Bean;
-// import org.springframework.context.annotation.Configuration;
-// import org.springframework.web.cors.CorsConfiguration;
-// import org.springframework.web.cors.CorsConfigurationSource;
-// import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-// @Configuration
-// public class CorsConfig {
-//     @Bean
-//     public CorsConfigurationSource corsConfigurationSource() {
-//         CorsConfiguration configuration = new CorsConfiguration();
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+@Configuration
+public class CorsConfig {
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
 
-//         // cho phép các URL nào có thể kết nối tới backend
-//         configuration.setAllowedOrigins(
-//                 Arrays.asList("http://localhost:3000", "http://localhost:4173", "http://localhost:5173"));
+        // cho phép các URL nào có thể kết nối tới backend
+        configuration.setAllowedOrigins(
+                Arrays.asList("http://localhost:3000", "http://localhost:4173", "http://localhost:5173"));
 
-//         // các method nào đc kết nối
-//         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // các method nào đc kết nối
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-//         // các phần header được phép gửi lên
-//         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "x-no-retry", "Access-Control-Allow-Methods", 
-//             "Access-Control-Allow-Headers"));
-//         configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Methods", "Authorization", "Content-Type", "Accept", "x-no-retry"));
+        // các phần header được phép gửi lên
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "x-no-retry"));
+        // configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Methods", "Authorization", "Content-Type", "Accept", "x-no-retry"));
 
 
-//         // gửi kèm cookies hay không
-//         configuration.setAllowCredentials(true);
+        // gửi kèm cookies hay không
+        configuration.setAllowCredentials(true);
 
-//         // thời gian pre-flight request có thể cache (tính theo seconds)
-//         configuration.setMaxAge(3600L);
+        // thời gian pre-flight request có thể cache (tính theo seconds)
+        configuration.setMaxAge(3600L);
 
-//         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//         // cấu hình cors cho tất cả api
-//         source.registerCorsConfiguration("/**", configuration);
-//         return source;
-//     }
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // cấu hình cors cho tất cả api
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
-// }
+}
