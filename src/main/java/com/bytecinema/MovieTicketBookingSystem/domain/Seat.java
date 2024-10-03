@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +30,6 @@ public class Seat {
     @JoinColumn(name="auditorium_id")
     private Auditorium auditorium;
 
-    @ManyToMany(mappedBy = "seats", fetch = FetchType.LAZY)
-    private List<Booking> bookings;
+    @OneToMany(mappedBy = "seat")
+    private List<ReservedBooking> reservedBookings;
 }

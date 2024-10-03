@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.math.BigDecimal;
@@ -32,9 +33,9 @@ public class Booking {
     @JoinColumn(name="screening_id")
     private Screening screening;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "reserved_seats", joinColumns = @JoinColumn(name = "booking_id"), inverseJoinColumns = @JoinColumn(name = "seat_id"))
-    private List<Seat> seats;
+    @OneToMany(mappedBy = "booking")
+    private List<ReservedBooking> reservedBookings;
+    
 
 
 }

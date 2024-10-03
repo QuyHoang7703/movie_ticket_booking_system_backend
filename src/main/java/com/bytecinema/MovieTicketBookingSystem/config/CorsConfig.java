@@ -15,12 +15,14 @@ public class CorsConfig {
         // cho phép các URL nào có thể kết nối tới backend
         configuration.setAllowedOrigins(
                 Arrays.asList("http://localhost:3000", "http://localhost:4173", "http://localhost:5173"));
+                // Arrays.asList("*"));
 
         // các method nào đc kết nối
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
         // các phần header được phép gửi lên
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "x-no-retry"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "x-no-retry", "Access-Control-Allow-Origin"));
+        // configuration.setAllowedHeaders(Arrays.asList("*"));
         // configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Methods", "Authorization", "Content-Type", "Accept", "x-no-retry"));
 
 

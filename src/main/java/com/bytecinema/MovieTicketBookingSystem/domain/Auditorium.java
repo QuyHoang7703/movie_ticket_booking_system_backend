@@ -22,7 +22,7 @@ public class Auditorium {
     private long id;
     private String name;
     private int capacity;
-
+    
     @OneToMany(mappedBy = "auditorium", fetch = FetchType.LAZY)
     private List<Seat> seats;
 

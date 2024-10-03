@@ -1,6 +1,7 @@
 package com.bytecinema.MovieTicketBookingSystem.domain;
 
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -19,6 +20,7 @@ public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+    @Column(unique=true)
     private String name;
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)

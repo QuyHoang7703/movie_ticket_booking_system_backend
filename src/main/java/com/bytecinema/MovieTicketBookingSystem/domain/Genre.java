@@ -13,37 +13,22 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
 import java.time.Instant;
 import java.util.List;
-// import org.hibernate.mapping.List;
 
 @Entity
-@Table(name="movies")
-@Getter
-@Setter
-public class Movie {
+@Table(name="genres")
+public class Genre {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String name;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
-    private String length;
-    private Instant releaseDay;
     private Instant createAt;
     private Instant updateAt;
-    
-    @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
-    private List<MovieGenre> movieGenres;
 
-  
-    @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
-    private List<Screening> screenings;
 
-    @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
-    private List<Images> images;
 
     @PrePersist
     public void handleBeforeCreated(){
@@ -55,5 +40,11 @@ public class Movie {
     public void handleBeforeUpdate() {
         this.updateAt = Instant.now();
     }
+    
+    @OneToMany(mappedBy = "genre")
+    private List<MovieGenre> movieGenres;
 
+    
+
+    
 }
