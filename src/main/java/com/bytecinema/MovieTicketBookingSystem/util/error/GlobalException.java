@@ -18,8 +18,10 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalException {
    @ExceptionHandler(value = {
+        
         UsernameNotFoundException.class,
         BadCredentialsException.class,
+        NullPointerException.class,
         IdInValidException.class
     })
     public ResponseEntity<RestResponse<Object>> handleException(Exception ex) {

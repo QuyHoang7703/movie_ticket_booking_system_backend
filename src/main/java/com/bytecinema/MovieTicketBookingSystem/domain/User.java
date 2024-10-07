@@ -48,6 +48,8 @@ public class User {
     private String otp;
     private Instant otpExpirationTime;
     private boolean verified;
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String token;
 
     @ManyToOne
     @JoinColumn(name = "role_id")

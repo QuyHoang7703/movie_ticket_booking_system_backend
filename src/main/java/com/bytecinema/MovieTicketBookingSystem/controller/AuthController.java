@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.RestResponse;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
+import com.bytecinema.MovieTicketBookingSystem.dto.ResetPasswordRequest;
 import com.bytecinema.MovieTicketBookingSystem.dto.ResponseInfo;
 import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.LoginDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO;
@@ -30,30 +31,29 @@ import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.UserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.VerifyDTO;
+import com.bytecinema.MovieTicketBookingSystem.service.TokenService;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
 import com.bytecinema.MovieTicketBookingSystem.util.annatiation.ApiMessage;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 @RestController
 @RequestMapping("api/v1")
+@RequiredArgsConstructor
 public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final TokenService tokenService;
     @Value("${bytecinema.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
-
-    
-    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil
-                            , UserService userService,PasswordEncoder passwordEncoder) {
-        this.authenticationManagerBuilder = authenticationManagerBuilder;
-        this.securityUtil = securityUtil;
-        this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @PostMapping("auth/register")
     @ApiMessage("Register a new user")
@@ -92,7 +92,7 @@ public class AuthController {
         return ResponseEntity.ok(this.userService.convertToResUserInfoDTO(this.userService.handleUpdateUser(user)));
     }
 
-    @PostMapping("/auth/verify")
+    @PostMapping("/auth/verify-otp")
     public ResponseEntity<ResponseInfo> verify(@RequestBody VerifyDTO verifyDTO) throws IdInValidException{
         if(!this.userService.checkAvailableEmail(verifyDTO.getEmail())){
             throw new IdInValidException("Email not found");
@@ -111,8 +111,6 @@ public class AuthController {
         return ResponseEntity.ok(new ResponseInfo("Resend OTP"));
 
     }
-
-
 
 
     @PostMapping("/auth/login")
@@ -217,4 +215,38 @@ public class AuthController {
         System.out.println(">>>>> Logout account username: " + username);
         return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(null);
     }
+
+    @PostMapping("/auth/reset-password-request")
+    public ResponseEntity<ResponseInfo> forgotPassword(@RequestParam("email") String email) {
+        User user = this.userService.handleGetUserByEmail(email);
+        if(user == null) {
+            try {
+                throw new IdInValidException("Không tồn tại email này trong hệ thống");
+            } catch (IdInValidException e) {
+                e.printStackTrace();
+            }
+        }
+        this.tokenService.createToken(email);
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Vui lòng kiểm tra email để đặt lại mật khẩu"));
+    }
+
+    @GetMapping("/auth/verify-token")
+    public ResponseEntity<Boolean> checkToken(@RequestParam("token") String token, @RequestParam("email") String email) throws IdInValidException{
+        boolean checkValid = this.tokenService.validToken(email, token);
+        return ResponseEntity.status(HttpStatus.OK).body(checkValid);
+    }
+
+    @PostMapping("/auth/reset-password")
+    public ResponseEntity<ResponseInfo> resetPassword(@RequestBody ResetPasswordRequest request) {
+
+        try {
+            this.userService.updatePassword(request);
+        } catch (IdInValidException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Có lỗi khi reset password"));
+        }
+       
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Đã cập nhập lại mật khẩu. Vui lòng đăng nhập lại"));
+    } 
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
+import com.bytecinema.MovieTicketBookingSystem.dto.ResetPasswordRequest;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.RoleRepository;
@@ -16,6 +17,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
+
 @Service
 public class UserService {
     private final UserRepository userRepository;
@@ -166,4 +169,20 @@ public class UserService {
         return this.userRepository.save(userUpdate);
        
     }
+
+     public void updatePassword(ResetPasswordRequest request) throws IdInValidException{
+        if(!request.getPassword().equals(request.getConfirmPassword())){
+            throw new IdInValidException("Mật khẩu và mật khẩu xác nhận không trùng khớp. Vui lòng nhập lại");
+        }
+        User user = userRepository.findByEmail(request.getEmail())
+        .orElseThrow(() -> new IdInValidException("Không tồn tại email này trong hệ thống"));
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRefreshToken(null);
+        this.userRepository.save(user);
+
+    }
+
+    
+
 }
