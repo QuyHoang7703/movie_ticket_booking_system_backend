@@ -46,7 +46,7 @@ public class TokenService {
             User user = optionalUser.get();
             String token = UUID.randomUUID().toString();
             user.setToken(token);
-            user.setOtpExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
+            user.setExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
             this.userRepository.save(user);
             sendVerificationEmail(email, token);
 
@@ -59,11 +59,11 @@ public class TokenService {
             User user = optionalUser.get();
             
             boolean checkToken = user.getToken() != null && user.getToken().equals(token);
-            // Instant otpExpirationTime = user.getOtpExpirationTime();
-            boolean checkTokenExpired = Instant.now().isAfter(user.getOtpExpirationTime());
+            // Instant ExpirationTime = user.getExpirationTime();
+            boolean checkTokenExpired = Instant.now().isAfter(user.getExpirationTime());
             if(checkToken && !checkTokenExpired) {
                 user.setToken(null);
-                user.setOtpExpirationTime(null);
+                user.setExpirationTime(null);
                 this.userRepository.save(user);
                 return true;
             }

@@ -46,7 +46,7 @@ public class User {
     private Instant updateAt;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String otp;
-    private Instant otpExpirationTime;
+    private Instant expirationTime;
     private boolean verified;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String token;

@@ -43,7 +43,7 @@ public class UserService {
         user.setEmail(registerDTO.getEmail());
         user.setPassword(registerDTO.getPassword());
         user.setRole(role);
-        user.setOtpExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
+        user.setExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
         String otp = this.generateOTP();
         
         String otpDecoded = this.passwordEncoder.encode(otp);
@@ -129,11 +129,11 @@ public class UserService {
         if(optionalUser.isPresent()) {
             User user = optionalUser.get();
             boolean isValidOtp = this.passwordEncoder.matches(otp, user.getOtp());
-            boolean isOtpExpired = Instant.now().isAfter(user.getOtpExpirationTime());
+            boolean isOtpExpired = Instant.now().isAfter(user.getExpirationTime());
             if(isValidOtp && !isOtpExpired){
                 user.setVerified(true);
                 user.setOtp(null);
-                user.setOtpExpirationTime(null);
+                user.setExpirationTime(null);
                 this.userRepository.save(user);
             }else {
                 throw new IdInValidException("OTP is expired");
@@ -148,7 +148,7 @@ public class UserService {
         if(optionalUser.isPresent()) {
             User user = optionalUser.get();
             user.setOtp(otpDecoded);
-            user.setOtpExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
+            user.setExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
             this.userRepository.save(user);
         }
         this.sendVerificationEmail(email, otp);
