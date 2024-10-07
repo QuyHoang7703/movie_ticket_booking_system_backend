@@ -20,7 +20,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
 
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO;
 import com.nimbusds.jose.util.Base64;
 import java.util.Optional;;
 

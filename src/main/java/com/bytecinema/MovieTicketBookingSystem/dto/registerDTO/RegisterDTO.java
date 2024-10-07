@@ -1,4 +1,4 @@
-package com.bytecinema.MovieTicketBookingSystem.domain.dto;
+package com.bytecinema.MovieTicketBookingSystem.dto.registerDTO;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

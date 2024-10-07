@@ -17,6 +17,11 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.List;
+
+import com.bytecinema.MovieTicketBookingSystem.util.constant.GenderEnum;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.time.LocalDate;
 @Entity
 @Table(name="Users")
 @Getter
@@ -29,9 +34,12 @@ public class User {
     private String email;
     private String password;
     private String name;
-    private boolean male;
+    private GenderEnum gender;
     private String phoneNumber;
     private String avatar;
+    // @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    private LocalDate birthDay;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String refreshToken;
     private Instant createAt;

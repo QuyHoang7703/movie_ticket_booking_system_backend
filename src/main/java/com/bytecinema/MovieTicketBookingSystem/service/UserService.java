@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.RegisterDTO;
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResUserDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.RoleRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
@@ -95,13 +95,14 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
     
-    public ResUserDTO convertToResUserRegister(User user){
-        ResUserDTO resUser = new ResUserDTO();
+    public ResUserInfoDTO convertToResUserInfoDTO(User user){
+        ResUserInfoDTO resUser = new ResUserInfoDTO();
         resUser.setId(user.getId());
         resUser.setEmail(user.getEmail());
         resUser.setName(user.getName());
         resUser.setPhoneNumber(user.getPhoneNumber());
-        resUser.setMale(user.isMale());
+        resUser.setBirthDay(user.getBirthDay());
+        resUser.setGender(user.getGender());
         resUser.setAvatar(user.getAvatar());
     
         return resUser;
@@ -148,5 +149,21 @@ public class UserService {
             this.userRepository.save(user);
         }
         this.sendVerificationEmail(email, otp);
+    }
+
+    public User handleUpdateUser(User reqUser) {
+        long id = reqUser.getId();
+        User userUpdate = this.fetchUserById(id);
+        if(userUpdate != null) {
+            // userUpdate.setPassword(reqUser.getPassword());
+            userUpdate.setName(reqUser.getName());
+            userUpdate.setPhoneNumber(reqUser.getPhoneNumber());
+            userUpdate.setGender(reqUser.getGender());
+            userUpdate.setAvatar(reqUser.getAvatar());
+            userUpdate.setBirthDay(reqUser.getBirthDay());
+            // userUpdate.setLockReason(reqUser.getLockReason());
+        }
+        return this.userRepository.save(userUpdate);
+       
     }
 }

@@ -1,4 +1,4 @@
-package com.bytecinema.MovieTicketBookingSystem.domain.dto;
+package com.bytecinema.MovieTicketBookingSystem.dto.loginDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
+import java.time.LocalDate;
 @Getter
 @Setter
 public class ResLoginDTO {
@@ -22,6 +22,8 @@ public class ResLoginDTO {
         private long id;
         private String username;
         private String name;
+
+        // private LocalDate birthDay;
     }
 
     @Getter

@@ -1,4 +1,4 @@
-package com.bytecinema.MovieTicketBookingSystem.domain.dto;
+package com.bytecinema.MovieTicketBookingSystem.dto;
 
 import lombok.Getter;
 import lombok.Setter;

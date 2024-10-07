@@ -21,12 +21,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.RestResponse;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.LoginDTO;
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.RegisterDTO;
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResLoginDTO;
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResUserDTO;
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.ResponseMessage;
-import com.bytecinema.MovieTicketBookingSystem.domain.dto.VerifyDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.ResponseInfo;
+import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.LoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO.UserGetAccount;
+import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO.UserLogin;
+import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.UserInfoDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.VerifyDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
 import com.bytecinema.MovieTicketBookingSystem.util.annatiation.ApiMessage;
@@ -54,36 +57,58 @@ public class AuthController {
 
     @PostMapping("auth/register")
     @ApiMessage("Register a new user")
-    public ResponseEntity<ResUserDTO> createUser(@RequestBody RegisterDTO registerDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo> createUser(@RequestBody RegisterDTO registerDTO) throws IdInValidException{
         if(this.userService.checkAvailableEmail(registerDTO.getEmail())){
-            throw new IdInValidException("Email already exist, please use another one");
+            User user = this.userService.handleGetUserByEmail(registerDTO.getEmail());
+            if(!user.isVerified()) {
+                throw new IdInValidException("Email này đã được đăng ký nhưng chưa xác nhận. Vui lòng xác nhận");
+            }
+            throw new IdInValidException("Email này đã được đăng ký rồi");
         }
+
         if(!registerDTO.getPassword().equals(registerDTO.getConfirmPassword())){
-            throw new IdInValidException("Password and Confirm Password do not match");
+            throw new IdInValidException("Mật khẩu và xác nhận mật khẩu không trùng khớp");
         }
         String hashPassword = this.passwordEncoder.encode(registerDTO.getPassword());
         registerDTO.setPassword(hashPassword);
         User newUser = this.userService.handleRegisterUser(registerDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResUserRegister(newUser));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseInfo("Kiểm tra email để lấy OTP"));
+    }
+
+    @PostMapping("auth/register-info")
+    @ApiMessage("Register a new user")
+    public ResponseEntity<ResUserInfoDTO> addInfoUser(@RequestBody UserInfoDTO userInfoDTO) throws IdInValidException{
+        User user = this.userService.handleGetUserByEmail(userInfoDTO.getEmail());
+        if(user==null) {
+            throw new IdInValidException("Không tồn tại email này trong hệ thống");
+        }
+        user.setName(userInfoDTO.getName());
+        user.setBirthDay(userInfoDTO.getBirthDay());          
+        user.setGender(userInfoDTO.getGender());
+        user.setPhoneNumber(userInfoDTO.getPhoneNumber());
+        user.setAvatar(userInfoDTO.getAvatar());
+        
+        
+        return ResponseEntity.ok(this.userService.convertToResUserInfoDTO(this.userService.handleUpdateUser(user)));
     }
 
     @PostMapping("/auth/verify")
-    public ResponseEntity<ResponseMessage> verify(@RequestBody VerifyDTO verifyDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo> verify(@RequestBody VerifyDTO verifyDTO) throws IdInValidException{
         if(!this.userService.checkAvailableEmail(verifyDTO.getEmail())){
             throw new IdInValidException("Email not found");
         }
         this.userService.verify(verifyDTO.getEmail(), verifyDTO.getOtp());
         
-        return ResponseEntity.ok(new ResponseMessage("Verified successful"));
+        return ResponseEntity.ok(new ResponseInfo("Verified successful"));
     }
 
     @PostMapping("/auth/resend")
-    public ResponseEntity<ResponseMessage> resendOTP(@RequestParam String email) throws IdInValidException{
+    public ResponseEntity<ResponseInfo> resendOTP(@RequestParam String email) throws IdInValidException{
         // if(this.userService.checkAvailableEmail(email)){
         //     throw new IdInValidException("Email not found");
         // }
         this.userService.resendOtp(email);
-        return ResponseEntity.ok(new ResponseMessage("Resend OTP"));
+        return ResponseEntity.ok(new ResponseInfo("Resend OTP"));
 
     }
 
@@ -131,22 +156,6 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
     }
 
-    @GetMapping("/auth/users")
-    @ApiMessage("fetch user")
-    public ResponseEntity<ResLoginDTO.UserGetAccount> getAccount() {
-        String email = SecurityUtil.getCurrentLogin().isPresent()?
-                            SecurityUtil.getCurrentLogin().get():"";
-        User currentUser = this.userService.handleGetUserByEmail(email);
-        ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
-        ResLoginDTO.UserGetAccount userGetAccount = new ResLoginDTO.UserGetAccount();
-        if(currentUser != null){
-            userLogin.setId(currentUser.getId());
-            userLogin.setUsername(currentUser.getEmail());
-            userLogin.setName(currentUser.getName());
-            userGetAccount.setUser(userLogin);
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(userGetAccount);
-    }
 
     @GetMapping("/auth/refresh")
     @ApiMessage("Refresh token")
