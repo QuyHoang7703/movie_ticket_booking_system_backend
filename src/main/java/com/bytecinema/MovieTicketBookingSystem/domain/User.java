@@ -36,6 +36,7 @@ public class User {
     private String name;
     private GenderEnum gender;
     private String phoneNumber;
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String avatar;
     // @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
