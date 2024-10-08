@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.RestResponse;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
@@ -31,6 +33,7 @@ import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.UserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.VerifyDTO;
+import com.bytecinema.MovieTicketBookingSystem.service.S3Service;
 import com.bytecinema.MovieTicketBookingSystem.service.TokenService;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
@@ -52,6 +55,7 @@ public class AuthController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+    private final S3Service s3Service;
     @Value("${bytecinema.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
@@ -77,7 +81,7 @@ public class AuthController {
 
     @PostMapping("auth/register-info")
     @ApiMessage("Register a new user")
-    public ResponseEntity<ResUserInfoDTO> addInfoUser(@RequestBody UserInfoDTO userInfoDTO) throws IdInValidException{
+    public ResponseEntity<ResUserInfoDTO> addInfoUser(@RequestParam(value="fileAvatar", required = false) MultipartFile file, @RequestPart("user_info") UserInfoDTO userInfoDTO) throws IdInValidException{
         User user = this.userService.handleGetUserByEmail(userInfoDTO.getEmail());
         if(user==null) {
             throw new IdInValidException("Không tồn tại email này trong hệ thống");
@@ -86,8 +90,12 @@ public class AuthController {
         user.setBirthDay(userInfoDTO.getBirthDay());          
         user.setGender(userInfoDTO.getGender());
         user.setPhoneNumber(userInfoDTO.getPhoneNumber());
-        user.setAvatar(userInfoDTO.getAvatar());
-        
+        if(file!=null) {
+            String avatar = this.s3Service.uploadFile(file, "avatars");
+            user.setAvatar(avatar);
+        }
+
+
         
         return ResponseEntity.ok(this.userService.convertToResUserInfoDTO(this.userService.handleUpdateUser(user)));
     }
