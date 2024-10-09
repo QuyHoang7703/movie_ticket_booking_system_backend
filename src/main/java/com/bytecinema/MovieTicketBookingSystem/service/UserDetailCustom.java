@@ -22,7 +22,7 @@ public class UserDetailCustom implements UserDetailsService{
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = this.userService.handleGetUserByEmail(username);
         if (user == null) {
-            throw new UsernameNotFoundException("Email/Password is invalid");
+            throw new UsernameNotFoundException("Email/Password không hợp lệ");
         }
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),

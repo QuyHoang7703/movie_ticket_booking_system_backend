@@ -136,7 +136,7 @@ public class UserService {
                 user.setExpirationTime(null);
                 this.userRepository.save(user);
             }else {
-                throw new IdInValidException("OTP is expired");
+                throw new IdInValidException("OTP đã hết hạn");
             }
         }
     }
@@ -170,13 +170,16 @@ public class UserService {
        
     }
 
-     public void updatePassword(ResetPasswordRequest request) throws IdInValidException{
+    public void updatePassword(ResetPasswordRequest request) throws IdInValidException{
         if(!request.getPassword().equals(request.getConfirmPassword())){
             throw new IdInValidException("Mật khẩu và mật khẩu xác nhận không trùng khớp. Vui lòng nhập lại");
         }
+
         User user = userRepository.findByEmail(request.getEmail())
         .orElseThrow(() -> new IdInValidException("Không tồn tại email này trong hệ thống"));
-
+        if(user.getExpirationTime()==null || Instant.now().isAfter(user.getExpirationTime())){
+            throw new IdInValidException("Yêu cầu cập nhập lại mật khẩu của bạn đã hết hiệu lực sử dụng");
+        }
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRefreshToken(null);
         this.userRepository.save(user);

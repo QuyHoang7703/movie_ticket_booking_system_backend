@@ -47,14 +47,18 @@ public class UserController {
         String email = SecurityUtil.getCurrentLogin().isPresent()?
                             SecurityUtil.getCurrentLogin().get():"";
         User currentUser = this.userService.handleGetUserByEmail(email);
-        ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
+        ResLoginDTO.UserLogin userLogin = ResLoginDTO.UserLogin.builder()
+                                    .id(currentUser.getId())
+                                    .email(currentUser.getEmail())
+                                    .name(currentUser.getName())
+                                    .phoneNumber(currentUser.getPhoneNumber())
+                                    // .birthDay(currentUser.getBirthDay())
+                                    .gender(currentUser.getGender())
+                                    .avatar(currentUser.getAvatar())  
+                                    .build();
         ResLoginDTO.UserGetAccount userGetAccount = new ResLoginDTO.UserGetAccount();
-        if(currentUser != null){
-            userLogin.setId(currentUser.getId());
-            userLogin.setUsername(currentUser.getEmail());
-            userLogin.setName(currentUser.getName());
-            userGetAccount.setUser(userLogin);
-        }
+        userGetAccount.setUser(userLogin);
+       
         return ResponseEntity.status(HttpStatus.OK).body(userGetAccount);
     }
 

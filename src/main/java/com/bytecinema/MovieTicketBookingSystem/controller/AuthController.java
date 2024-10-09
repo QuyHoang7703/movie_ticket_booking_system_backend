@@ -43,8 +43,6 @@ import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 @RestController
 @RequestMapping("api/v1")
@@ -137,7 +135,18 @@ public class AuthController {
         User user = this.userService.handleGetUserByEmail(loginDTO.getEmail());
         ResLoginDTO res = new ResLoginDTO();
         if(user != null){
-            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName());
+            // ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName(), user.getPhoneNumber(), user.getBirthDay(), user.getGender(), user.getAvatar());
+            // ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName(), user.getAvatar());
+            ResLoginDTO.UserLogin userLogin = ResLoginDTO.UserLogin.builder()
+                                                .id(user.getId())
+                                                .email(user.getEmail())
+                                                .name(user.getName())
+                                                .phoneNumber(user.getPhoneNumber())
+                                                .gender(user.getGender())
+                                                .avatar(user.getAvatar())  
+                                                .build();
+
+                                                
             res.setUserLogin(userLogin);
         }
     
@@ -178,7 +187,18 @@ public class AuthController {
         if(user==null) {
             throw new IdInValidException("Refresh Token is invalid");
         }else{
-            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName());
+  
+            // ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName(), user.getAvatar());
+            ResLoginDTO.UserLogin userLogin = ResLoginDTO.UserLogin.builder()
+                                                .id(user.getId())
+                                                .email(user.getEmail())
+                                                .name(user.getName())
+                                                .phoneNumber(user.getPhoneNumber())
+                                                // .birthDay(user.getBirthDay())
+                                                .gender(user.getGender())
+                                                .avatar(user.getAvatar())  
+                                                .build();
+
             res.setUserLogin(userLogin);
         }
   
@@ -252,7 +272,7 @@ public class AuthController {
         } catch (IdInValidException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Có lỗi khi reset password"));
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo(e.getMessage()));
         }
        
         return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Đã cập nhập lại mật khẩu. Vui lòng đăng nhập lại"));

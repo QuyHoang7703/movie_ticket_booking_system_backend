@@ -19,7 +19,6 @@ public class ResUserInfoDTO {
     private String phoneNumber;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    // @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate birthDay;
 
     private  GenderEnum gender;
