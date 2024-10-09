@@ -13,6 +13,8 @@ import com.bytecinema.MovieTicketBookingSystem.repository.RoleRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 
+import lombok.RequiredArgsConstructor;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -20,19 +22,14 @@ import java.util.Random;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    public UserService(UserRepository userRepository, RoleRepository roleRepository,
-                         PasswordEncoder passwordEncoder, EmailService emailService) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
-    }
-
+    private final OtpService otpService;
+   
     public User handleRegisterUser(RegisterDTO registerDTO) throws IdInValidException{
         Optional<Role> optionalRole = this.roleRepository.findById(registerDTO.getRoleId());
         if(!optionalRole.isPresent()) {
@@ -44,12 +41,12 @@ public class UserService {
         user.setPassword(registerDTO.getPassword());
         user.setRole(role);
         user.setExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
-        String otp = this.generateOTP();
+        String otp = this.otpService.generateOTP();
         
         String otpDecoded = this.passwordEncoder.encode(otp);
         user.setOtp(otpDecoded);
         //Send OTP to email register
-        this.sendVerificationEmail(registerDTO.getEmail(), otp);
+        this.otpService.sendVerificationEmail(registerDTO.getEmail(), otp);
 
         // Add attribute of user
         return this.userRepository.save(user);
@@ -111,48 +108,7 @@ public class UserService {
         return resUser;
     }
 
-    private String generateOTP() {
-        Random random = new Random();
-        int otpValue = 100000 + random.nextInt(900000);
-        
-        return String.valueOf(otpValue);
-    }
-
-    public void sendVerificationEmail(String email, String otp) {
-        String subject = "Email verification";
-        String body = "Your verification OTP is: " + otp;
-        this.emailService.sendEmail(email, subject, body);
-    }
-
-    public void verify(String email, String otp) throws IdInValidException{
-        Optional<User> optionalUser = this.userRepository.findByEmail(email);
-        if(optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            boolean isValidOtp = this.passwordEncoder.matches(otp, user.getOtp());
-            boolean isOtpExpired = Instant.now().isAfter(user.getExpirationTime());
-            if(isValidOtp && !isOtpExpired){
-                user.setVerified(true);
-                user.setOtp(null);
-                user.setExpirationTime(null);
-                this.userRepository.save(user);
-            }else {
-                throw new IdInValidException("OTP đã hết hạn");
-            }
-        }
-    }
-
-    public void resendOtp(String email) {
-        String otp = this.generateOTP();
-        String otpDecoded = this.passwordEncoder.encode(otp);
-        Optional<User> optionalUser = this.userRepository.findByEmail(email);
-        if(optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            user.setOtp(otpDecoded);
-            user.setExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
-            this.userRepository.save(user);
-        }
-        this.sendVerificationEmail(email, otp);
-    }
+   
 
     public User handleUpdateUser(User reqUser) {
         long id = reqUser.getId();
@@ -176,17 +132,27 @@ public class UserService {
         }
 
         User user = userRepository.findByEmail(request.getEmail())
-        .orElseThrow(() -> new IdInValidException("Không tồn tại email này trong hệ thống"));
-        if(user.getExpirationTime()==null || Instant.now().isAfter(user.getExpirationTime())){
-            throw new IdInValidException("Yêu cầu cập nhập lại mật khẩu của bạn đã hết hiệu lực sử dụng");
+        .orElseThrow(() -> new IdInValidException("Không tồn tại tài khoản này trong hệ thống"));
+        if(!user.isVerified()) {
+            throw new IdInValidException("Tài khoản này chưa được xác thực");
+        }
+
+        if(user.getOtp()!=null) {
+            throw new IdInValidException("Vui lòng xác thực OTP");
+        }
+
+        if(user.getExpirationTime()==null|| Instant.now().isAfter(user.getExpirationTime()) ){
+            throw new IdInValidException("Bạn chưa xác thực OTP");
         }
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRefreshToken(null);
-        user.setExpirationTime(null);
-        user.setToken(null);
+        // user.setExpirationTime(null);
+        // user.setToken(null);
         this.userRepository.save(user);
 
     }
+
+   
 
     
 

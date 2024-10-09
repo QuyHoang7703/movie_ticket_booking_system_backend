@@ -33,8 +33,8 @@ import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.UserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.VerifyDTO;
+import com.bytecinema.MovieTicketBookingSystem.service.OtpService;
 import com.bytecinema.MovieTicketBookingSystem.service.S3Service;
-import com.bytecinema.MovieTicketBookingSystem.service.TokenService;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
 import com.bytecinema.MovieTicketBookingSystem.util.annatiation.ApiMessage;
@@ -52,8 +52,8 @@ public class AuthController {
     private final SecurityUtil securityUtil;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-    private final TokenService tokenService;
     private final S3Service s3Service;
+    private final OtpService otpService;
     @Value("${bytecinema.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
@@ -103,17 +103,14 @@ public class AuthController {
         if(!this.userService.checkAvailableEmail(verifyDTO.getEmail())){
             throw new IdInValidException("Email not found");
         }
-        this.userService.verify(verifyDTO.getEmail(), verifyDTO.getOtp());
+        this.otpService.verify(verifyDTO.getEmail(), verifyDTO.getOtp());
         
         return ResponseEntity.ok(new ResponseInfo("Verified successful"));
     }
 
     @PostMapping("/auth/resend")
     public ResponseEntity<ResponseInfo> resendOTP(@RequestParam String email) throws IdInValidException{
-        // if(this.userService.checkAvailableEmail(email)){
-        //     throw new IdInValidException("Email not found");
-        // }
-        this.userService.resendOtp(email);
+        this.otpService.resendOtp(email);
         return ResponseEntity.ok(new ResponseInfo("Resend OTP"));
 
     }
@@ -246,27 +243,28 @@ public class AuthController {
 
     @PostMapping("/auth/reset-password-request")
     public ResponseEntity<ResponseInfo> forgotPassword(@RequestParam("email") String email) {
-        User user = this.userService.handleGetUserByEmail(email);
-        if(user == null) {
-            try {
-                throw new IdInValidException("Không tồn tại email này trong hệ thống");
-            } catch (IdInValidException e) {
-                e.printStackTrace();
-            }
+        try {
+            this.otpService.sendRequestForgotPassword(email);
+        } catch (IdInValidException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo(e.getMessage()));
         }
-        this.tokenService.createToken(email);
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Vui lòng kiểm tra email để đặt lại mật khẩu"));
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Vui lòng kiểm tra email để lấy OTP"));
     }
 
-    @GetMapping("/auth/verify-token")
-    public ResponseEntity<Boolean> checkToken(@RequestParam("token") String token, @RequestParam("email") String email) throws IdInValidException{
-        boolean checkValid = this.tokenService.validToken(email, token);
-        return ResponseEntity.status(HttpStatus.OK).body(checkValid);
+    @PostMapping("/auth/verify-otp-forgot-password")
+    public ResponseEntity<ResponseInfo> checkToken(@RequestBody VerifyDTO verifyDTO){
+        try {
+            this.otpService.verify_otp_forgot(verifyDTO.getEmail(), verifyDTO.getOtp());
+        } catch (IdInValidException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo(e.getMessage()));
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Xác thực thành công"));
     }
 
     @PostMapping("/auth/reset-password")
     public ResponseEntity<ResponseInfo> resetPassword(@RequestBody ResetPasswordRequest request) {
-
         try {
             this.userService.updatePassword(request);
         } catch (IdInValidException e) {
@@ -277,4 +275,6 @@ public class AuthController {
        
         return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Đã cập nhập lại mật khẩu. Vui lòng đăng nhập lại"));
     } 
+
+
 }
