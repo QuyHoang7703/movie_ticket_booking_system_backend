@@ -182,6 +182,8 @@ public class UserService {
         }
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRefreshToken(null);
+        user.setExpirationTime(null);
+        user.setToken(null);
         this.userRepository.save(user);
 
     }
