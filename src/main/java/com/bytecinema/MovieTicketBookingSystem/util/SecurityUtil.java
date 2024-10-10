@@ -81,7 +81,7 @@ public class SecurityUtil {
 
      public String createRefreshToken(String username, ResLoginDTO loginDTO) {
         Instant now = Instant.now();
-        Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
+        Instant validity = now.plus(this.refreshTokenExpiration, ChronoUnit.SECONDS);
 
         //Create header
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();

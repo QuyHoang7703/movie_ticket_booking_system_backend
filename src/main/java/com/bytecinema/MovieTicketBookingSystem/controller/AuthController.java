@@ -57,6 +57,9 @@ public class AuthController {
     @Value("${bytecinema.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
+    @Value("${bytecinema.jwt.access-token-validity-in-seconds}")
+    private long accessTokenExpiration;
+
     @PostMapping("auth/register")
     @ApiMessage("Register a new user")
     public ResponseEntity<ResponseInfo> createUser(@RequestBody RegisterDTO registerDTO) throws IdInValidException{
@@ -150,6 +153,13 @@ public class AuthController {
         // Create token when authentication is successful
         String accessToken = this.securityUtil.createAccessToken(authentication.getName(), res);
         res.setAccessToken(accessToken);
+        ResponseCookie accCookies = ResponseCookie
+                                                .from("access_token", accessToken)
+                                                // .httpOnly(true)
+                                                .secure(true)
+                                                .path("/")
+                                                .maxAge(accessTokenExpiration)
+                                                .build();
         
 
         // Create refresh token 
@@ -165,7 +175,10 @@ public class AuthController {
                                                 .build();
         
         
-        return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
+        return ResponseEntity
+                            .status(HttpStatus.OK)
+                            .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                            .header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
     }
 
 
@@ -201,6 +214,14 @@ public class AuthController {
   
         String accessToken = this.securityUtil.createAccessToken(email, res);
         res.setAccessToken(accessToken);
+
+        ResponseCookie accCookies = ResponseCookie
+                                                .from("access_token", accessToken)
+                                                // .httpOnly(true)
+                                                .secure(true)
+                                                .path("/")
+                                                .maxAge(accessTokenExpiration)
+                                                .build();
         
 
         // Create refresh token 
@@ -216,7 +237,11 @@ public class AuthController {
                                                 .build();
         
         
-        return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
+        return ResponseEntity
+                            .status(HttpStatus.OK)
+                            .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                            .header(HttpHeaders.SET_COOKIE, resCookies.toString())
+                            .body(res);
      
     }
 

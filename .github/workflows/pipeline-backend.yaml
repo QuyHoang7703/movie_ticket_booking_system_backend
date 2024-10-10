@@ -104,8 +104,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            minhquang3010/movie_booking_api:1.0.2
+            minhquang3010/movie_booking_api:1.0.3
             minhquang3010/movie_booking_api:latest
           build-args: |
             PROFILE=dev
-            APP_VERSION=1.0.2
+            APP_VERSION=1.0.3
