@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
-import com.bytecinema.MovieTicketBookingSystem.dto.ResRoleDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.role.ResRoleDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.RoleService;
 
 @RestController

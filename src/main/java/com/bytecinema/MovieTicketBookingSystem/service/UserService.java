@@ -6,9 +6,9 @@ import org.springframework.stereotype.Service;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
-import com.bytecinema.MovieTicketBookingSystem.dto.ResetPasswordRequest;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqRegisterDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.resetPassword.ReqRestPassword;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.register.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.RoleRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
@@ -30,7 +30,7 @@ public class UserService {
     private final EmailService emailService;
     private final OtpService otpService;
    
-    public User handleRegisterUser(RegisterDTO registerDTO) throws IdInValidException{
+    public User handleRegisterUser(ReqRegisterDTO registerDTO) throws IdInValidException{
         Optional<Role> optionalRole = this.roleRepository.findById(registerDTO.getRoleId());
         if(!optionalRole.isPresent()) {
             throw new IdInValidException("Role is invalid");
@@ -126,7 +126,7 @@ public class UserService {
        
     }
 
-    public void updatePassword(ResetPasswordRequest request) throws IdInValidException{
+    public void updatePassword(ReqRestPassword request) throws IdInValidException{
         if(!request.getPassword().equals(request.getConfirmPassword())){
             throw new IdInValidException("Mật khẩu và mật khẩu xác nhận không trùng khớp. Vui lòng nhập lại");
         }

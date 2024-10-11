@@ -1,5 +1,6 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -28,9 +29,9 @@ public class EmailService {
             e.printStackTrace();;
             e.getMessage();
             throw new RuntimeException();
+        } catch (MailException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    
-    
 }

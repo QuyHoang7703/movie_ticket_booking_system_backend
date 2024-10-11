@@ -20,9 +20,11 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
 
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO;
 import com.nimbusds.jose.util.Base64;
-import java.util.Optional;;
+import java.util.Optional;
+import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class SecurityUtil {
@@ -59,19 +61,20 @@ public class SecurityUtil {
 
     }
 
-    public String createAccessToken(String username, ResLoginDTO loginDTO) {
+    public String createAccessToken(String username, ResLoginDTO ReqLoginDTO) {
         Instant now = Instant.now();
         Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
 
         //Create header
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
 
+
         // Create payload
         JwtClaimsSet claims = JwtClaimsSet.builder()
             .issuedAt(now)
             .expiresAt(validity)
             .subject(username)
-            .claim("user", loginDTO.getUserLogin())
+            .claim("user", ReqLoginDTO.getUserLogin())
             .build();   
 
        
@@ -79,7 +82,7 @@ public class SecurityUtil {
 
     }
 
-     public String createRefreshToken(String username, ResLoginDTO loginDTO) {
+     public String createRefreshToken(String username, ResLoginDTO ReqLoginDTO) {
         Instant now = Instant.now();
         Instant validity = now.plus(this.refreshTokenExpiration, ChronoUnit.SECONDS);
 
@@ -91,7 +94,7 @@ public class SecurityUtil {
             .issuedAt(now)
             .expiresAt(validity)
             .subject(username)
-            .claim("user", loginDTO.getUserLogin())
+            .claim("user", ReqLoginDTO.getUserLogin())
             .build();   
 
        

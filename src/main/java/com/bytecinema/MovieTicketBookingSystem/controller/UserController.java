@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
 import com.bytecinema.MovieTicketBookingSystem.util.annatiation.ApiMessage;

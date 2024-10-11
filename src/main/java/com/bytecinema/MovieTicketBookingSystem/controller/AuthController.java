@@ -23,16 +23,16 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.RestResponse;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
-import com.bytecinema.MovieTicketBookingSystem.dto.ResetPasswordRequest;
-import com.bytecinema.MovieTicketBookingSystem.dto.ResponseInfo;
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.LoginDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO.UserGetAccount;
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO.UserLogin;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.UserInfoDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.VerifyDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.login.ReqLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqRegisterDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqUserInfoDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqVerifyDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.resetPassword.ReqRestPassword;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.info.ResponseInfo;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO.UserGetAccount;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO.UserLogin;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.register.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.OtpService;
 import com.bytecinema.MovieTicketBookingSystem.service.S3Service;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
@@ -62,7 +62,7 @@ public class AuthController {
 
     @PostMapping("auth/register")
     @ApiMessage("Register a new user")
-    public ResponseEntity<ResponseInfo> createUser(@RequestBody RegisterDTO registerDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo> createUser(@RequestBody ReqRegisterDTO registerDTO) throws IdInValidException{
         if(this.userService.checkAvailableEmail(registerDTO.getEmail())){
             User user = this.userService.handleGetUserByEmail(registerDTO.getEmail());
             if(!user.isVerified()) {
@@ -82,13 +82,13 @@ public class AuthController {
 
     @PostMapping("auth/register-info")
     @ApiMessage("Register a new user")
-    public ResponseEntity<ResUserInfoDTO> addInfoUser(@RequestParam(value="fileAvatar", required = false) MultipartFile file, @RequestPart("user_info") UserInfoDTO userInfoDTO) throws IdInValidException{
+    public ResponseEntity<ResUserInfoDTO> addInfoUser(@RequestParam(value="fileAvatar", required = false) MultipartFile file, @RequestPart("user_info") ReqUserInfoDTO userInfoDTO) throws IdInValidException{
         User user = this.userService.handleGetUserByEmail(userInfoDTO.getEmail());
         if(user==null) {
             throw new IdInValidException("Không tồn tại email này trong hệ thống");
         }
         user.setName(userInfoDTO.getName());
-        user.setBirthDay(userInfoDTO.getBirthDay());          
+        user.setBirthDay(userInfoDTO.getBirthDay());
         user.setGender(userInfoDTO.getGender());
         user.setPhoneNumber(userInfoDTO.getPhoneNumber());
         if(file!=null) {
@@ -96,18 +96,16 @@ public class AuthController {
             user.setAvatar(avatar);
         }
 
-
-        
         return ResponseEntity.ok(this.userService.convertToResUserInfoDTO(this.userService.handleUpdateUser(user)));
     }
 
     @PostMapping("/auth/verify-otp")
-    public ResponseEntity<ResponseInfo> verify(@RequestBody VerifyDTO verifyDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo> verify(@RequestBody ReqVerifyDTO verifyDTO) throws IdInValidException{
         if(!this.userService.checkAvailableEmail(verifyDTO.getEmail())){
             throw new IdInValidException("Email not found");
         }
         this.otpService.verify(verifyDTO.getEmail(), verifyDTO.getOtp());
-        
+
         return ResponseEntity.ok(new ResponseInfo("Verified successful"));
     }
 
@@ -121,18 +119,18 @@ public class AuthController {
 
     @PostMapping("/auth/login")
     @ApiMessage("Login successfully")
-    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO) throws IdInValidException{
-        if(!this.userService.handleGetUserByEmail(loginDTO.getEmail()).isVerified()){
+    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO ReqLoginDTO) throws IdInValidException{
+        if(!this.userService.handleGetUserByEmail(ReqLoginDTO.getEmail()).isVerified()){
             throw new IdInValidException("User not found !!!");
         }
-        //Load username and password into Security  
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());
+        //Load username and password into Security
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(ReqLoginDTO.getEmail(), ReqLoginDTO.getPassword());
         //User Authentication => overwrite LoadUserByUsername in UserDetailService
         Authentication authentication = this.authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        
-        User user = this.userService.handleGetUserByEmail(loginDTO.getEmail());
+
+        User user = this.userService.handleGetUserByEmail(ReqLoginDTO.getEmail());
         ResLoginDTO res = new ResLoginDTO();
         if(user != null){
             // ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName(), user.getPhoneNumber(), user.getBirthDay(), user.getGender(), user.getAvatar());
@@ -146,25 +144,25 @@ public class AuthController {
                                                 .avatar(user.getAvatar())  
                                                 .build();
 
-                                                
+
             res.setUserLogin(userLogin);
         }
-    
-        // Create token when authentication is successful
+
+        // // Create token when authentication is successful
         String accessToken = this.securityUtil.createAccessToken(authentication.getName(), res);
         res.setAccessToken(accessToken);
-        ResponseCookie accCookies = ResponseCookie
-                                                .from("access_token", accessToken)
-                                                // .httpOnly(true)
-                                                .secure(true)
-                                                .path("/")
-                                                .maxAge(accessTokenExpiration)
-                                                .build();
+        // ResponseCookie accCookies = ResponseCookie
+        //                                         .from("access_token", accessToken)
+        //                                         // .httpOnly(true)
+        //                                         .secure(true)
+        //                                         .path("/")
+        //                                         .maxAge(accessTokenExpiration)
+        //                                         .build();
         
 
         // Create refresh token 
-        String refresh_token = this.securityUtil.createRefreshToken(loginDTO.getEmail(), res);
-        this.userService.updateRefreshToken(refresh_token, loginDTO.getEmail());
+        String refresh_token = this.securityUtil.createRefreshToken(ReqLoginDTO.getEmail(), res);
+        this.userService.updateRefreshToken(refresh_token, ReqLoginDTO.getEmail());
         ResponseCookie resCookies = ResponseCookie
                                                 .from("refresh_token", refresh_token)
                                                 .httpOnly(true)
@@ -177,7 +175,7 @@ public class AuthController {
         
         return ResponseEntity
                             .status(HttpStatus.OK)
-                            .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                            // .header(HttpHeaders.SET_COOKIE, accCookies.toString())
                             .header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
     }
 
@@ -215,13 +213,13 @@ public class AuthController {
         String accessToken = this.securityUtil.createAccessToken(email, res);
         res.setAccessToken(accessToken);
 
-        ResponseCookie accCookies = ResponseCookie
-                                                .from("access_token", accessToken)
-                                                // .httpOnly(true)
-                                                .secure(true)
-                                                .path("/")
-                                                .maxAge(accessTokenExpiration)
-                                                .build();
+        // ResponseCookie accCookies = ResponseCookie
+        //                                         .from("access_token", accessToken)
+        //                                         // .httpOnly(true)
+        //                                         .secure(true)
+        //                                         .path("/")
+        //                                         .maxAge(accessTokenExpiration)
+        //                                         .build();
         
 
         // Create refresh token 
@@ -239,7 +237,7 @@ public class AuthController {
         
         return ResponseEntity
                             .status(HttpStatus.OK)
-                            .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                            // .header(HttpHeaders.SET_COOKIE, accCookies.toString())
                             .header(HttpHeaders.SET_COOKIE, resCookies.toString())
                             .body(res);
      
@@ -278,7 +276,7 @@ public class AuthController {
     }
 
     @PostMapping("/auth/verify-otp-forgot-password")
-    public ResponseEntity<ResponseInfo> checkToken(@RequestBody VerifyDTO verifyDTO){
+    public ResponseEntity<ResponseInfo> checkToken(@RequestBody ReqVerifyDTO verifyDTO){
         try {
             this.otpService.verify_otp_forgot(verifyDTO.getEmail(), verifyDTO.getOtp());
         } catch (IdInValidException e) {
@@ -289,7 +287,7 @@ public class AuthController {
     }
 
     @PostMapping("/auth/reset-password")
-    public ResponseEntity<ResponseInfo> resetPassword(@RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<ResponseInfo> resetPassword(@RequestBody ReqRestPassword request) {
         try {
             this.userService.updatePassword(request);
         } catch (IdInValidException e) {
