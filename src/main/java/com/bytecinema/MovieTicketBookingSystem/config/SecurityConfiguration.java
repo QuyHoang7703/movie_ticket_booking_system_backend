@@ -45,7 +45,7 @@ public class SecurityConfiguration {
                         authz -> authz
                                 // .requestMatchers("/", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/register", "/api/v1/roles", "/api/v1/auth/verify", "/api/v1/auth/resend").permitAll()
                                 .requestMatchers("/", "/api/v1/auth/**").permitAll()
-                                .anyRequest().permitAll())
+                                .anyRequest().authenticated())
 
                 .oauth2ResourceServer((oauth2) -> oauth2.jwt(Customizer.withDefaults())
                     .authenticationEntryPoint(customAuthenticationEntryPoint))

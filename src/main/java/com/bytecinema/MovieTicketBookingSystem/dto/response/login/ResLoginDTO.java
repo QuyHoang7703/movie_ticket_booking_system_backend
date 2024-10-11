@@ -1,4 +1,4 @@
-package com.bytecinema.MovieTicketBookingSystem.dto.loginDTO;
+package com.bytecinema.MovieTicketBookingSystem.dto.response.login;
 
 import com.bytecinema.MovieTicketBookingSystem.util.constant.GenderEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
