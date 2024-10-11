@@ -151,13 +151,13 @@ public class AuthController {
         // // Create token when authentication is successful
         String accessToken = this.securityUtil.createAccessToken(authentication.getName(), res);
         res.setAccessToken(accessToken);
-        // ResponseCookie accCookies = ResponseCookie
-        //                                         .from("access_token", accessToken)
-        //                                         // .httpOnly(true)
-        //                                         .secure(true)
-        //                                         .path("/")
-        //                                         .maxAge(accessTokenExpiration)
-        //                                         .build();
+        ResponseCookie accCookies = ResponseCookie
+                                                .from("access_token", accessToken)
+                                                // .httpOnly(true)
+                                                .secure(true)
+                                                .path("/")
+                                                .maxAge(accessTokenExpiration)
+                                                .build();
         
 
         // Create refresh token 
@@ -175,7 +175,7 @@ public class AuthController {
         
         return ResponseEntity
                             .status(HttpStatus.OK)
-                            // .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                            .header(HttpHeaders.SET_COOKIE, accCookies.toString())
                             .header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
     }
 
@@ -213,13 +213,13 @@ public class AuthController {
         String accessToken = this.securityUtil.createAccessToken(email, res);
         res.setAccessToken(accessToken);
 
-        // ResponseCookie accCookies = ResponseCookie
-        //                                         .from("access_token", accessToken)
-        //                                         // .httpOnly(true)
-        //                                         .secure(true)
-        //                                         .path("/")
-        //                                         .maxAge(accessTokenExpiration)
-        //                                         .build();
+        ResponseCookie accCookies = ResponseCookie
+                                                .from("access_token", accessToken)
+                                                // .httpOnly(true)
+                                                .secure(true)
+                                                .path("/")
+                                                .maxAge(accessTokenExpiration)
+                                                .build();
         
 
         // Create refresh token 
@@ -237,7 +237,7 @@ public class AuthController {
         
         return ResponseEntity
                             .status(HttpStatus.OK)
-                            // .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                            .header(HttpHeaders.SET_COOKIE, accCookies.toString())
                             .header(HttpHeaders.SET_COOKIE, resCookies.toString())
                             .body(res);
      
@@ -295,9 +295,9 @@ public class AuthController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo(e.getMessage()));
         }
-       
+
         return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Đã cập nhập lại mật khẩu. Vui lòng đăng nhập lại"));
-    } 
+    }
 
 
 }
