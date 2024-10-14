@@ -1,10 +1,8 @@
 package com.bytecinema.MovieTicketBookingSystem.controller;
 
+import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqChangePasswordDTO;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -21,20 +19,17 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.bytecinema.MovieTicketBookingSystem.domain.RestResponse;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.login.ReqLoginDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqRegisterDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqVerifyDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.request.resetPassword.ReqRestPassword;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.info.ResponseInfo;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO.UserGetAccount;
-import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO.UserLogin;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.register.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.OtpService;
 import com.bytecinema.MovieTicketBookingSystem.service.S3Service;
+import com.bytecinema.MovieTicketBookingSystem.service.TokenService;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
 import com.bytecinema.MovieTicketBookingSystem.util.annatiation.ApiMessage;
@@ -54,6 +49,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final S3Service s3Service;
     private final OtpService otpService;
+    private final TokenService tokenService;
     @Value("${bytecinema.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
@@ -62,7 +58,7 @@ public class AuthController {
 
     @PostMapping("auth/register")
     @ApiMessage("Register a new user")
-    public ResponseEntity<ResponseInfo> createUser(@RequestBody ReqRegisterDTO registerDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo<String>> createUser(@RequestBody ReqRegisterDTO registerDTO) throws IdInValidException{
         if(this.userService.checkAvailableEmail(registerDTO.getEmail())){
             User user = this.userService.handleGetUserByEmail(registerDTO.getEmail());
             if(!user.isVerified()) {
@@ -77,10 +73,10 @@ public class AuthController {
         String hashPassword = this.passwordEncoder.encode(registerDTO.getPassword());
         registerDTO.setPassword(hashPassword);
         User newUser = this.userService.handleRegisterUser(registerDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseInfo("Kiểm tra email để lấy OTP"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseInfo<>("Kiểm tra email để lấy OTP"));
     }
 
-    @PostMapping("auth/register-info")
+    @PostMapping(value="auth/register-info", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ApiMessage("Register a new user")
     public ResponseEntity<ResUserInfoDTO> addInfoUser(@RequestParam(value="fileAvatar", required = false) MultipartFile file, @RequestPart("user_info") ReqUserInfoDTO userInfoDTO) throws IdInValidException{
         User user = this.userService.handleGetUserByEmail(userInfoDTO.getEmail());
@@ -92,7 +88,7 @@ public class AuthController {
         user.setGender(userInfoDTO.getGender());
         user.setPhoneNumber(userInfoDTO.getPhoneNumber());
         if(file!=null) {
-            String avatar = this.s3Service.uploadFile(file, "avatars");
+            String avatar = this.s3Service.uploadFile(file, "");
             user.setAvatar(avatar);
         }
 
@@ -100,19 +96,19 @@ public class AuthController {
     }
 
     @PostMapping("/auth/verify-otp")
-    public ResponseEntity<ResponseInfo> verify(@RequestBody ReqVerifyDTO verifyDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo<String>> verify(@RequestBody ReqVerifyDTO verifyDTO) throws IdInValidException{
         if(!this.userService.checkAvailableEmail(verifyDTO.getEmail())){
             throw new IdInValidException("Email not found");
         }
         this.otpService.verify(verifyDTO.getEmail(), verifyDTO.getOtp());
 
-        return ResponseEntity.ok(new ResponseInfo("Verified successful"));
+        return ResponseEntity.ok(new ResponseInfo<>("Verified successful"));
     }
 
     @PostMapping("/auth/resend")
-    public ResponseEntity<ResponseInfo> resendOTP(@RequestParam String email) throws IdInValidException{
+    public ResponseEntity<ResponseInfo<String>> resendOTP(@RequestParam String email) throws IdInValidException{
         this.otpService.resendOtp(email);
-        return ResponseEntity.ok(new ResponseInfo("Resend OTP"));
+        return ResponseEntity.ok(new ResponseInfo<>("Resend OTP"));
 
     }
 
@@ -264,40 +260,29 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(null);
     }
 
-    @PostMapping("/auth/reset-password-request")
-    public ResponseEntity<ResponseInfo> forgotPassword(@RequestParam("email") String email) {
-        try {
-            this.otpService.sendRequestForgotPassword(email);
-        } catch (IdInValidException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo(e.getMessage()));
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Vui lòng kiểm tra email để lấy OTP"));
+    @GetMapping("/auth/forgot-password")
+    @ApiMessage("Send request restore password")
+    public ResponseEntity<ResponseInfo<String>> sendRequestForgotPassword(@RequestParam("email") String email) throws IdInValidException {
+        this.tokenService.createToken(email);
+       
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Yêu cầu của bạn đã được gửi tới email"));
     }
 
-    @PostMapping("/auth/verify-otp-forgot-password")
-    public ResponseEntity<ResponseInfo> checkToken(@RequestBody ReqVerifyDTO verifyDTO){
-        try {
-            this.otpService.verify_otp_forgot(verifyDTO.getEmail(), verifyDTO.getOtp());
-        } catch (IdInValidException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo(e.getMessage()));
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Xác thực thành công"));
+    
+    @GetMapping("/auth/verify-token")
+    @ApiMessage("Send request restore password")
+    public ResponseEntity<ResponseInfo<Boolean>> checkValidToken(@RequestParam("token") String token) {
+        
+       
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>(this.tokenService.isValidToken(token)));
     }
 
-    @PostMapping("/auth/reset-password")
-    public ResponseEntity<ResponseInfo> resetPassword(@RequestBody ReqRestPassword request) {
-        try {
-            this.userService.updatePassword(request);
-        } catch (IdInValidException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo(e.getMessage()));
-        }
-
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Đã cập nhập lại mật khẩu. Vui lòng đăng nhập lại"));
+    @PostMapping("/auth/change-password")
+    public ResponseEntity<ResponseInfo<String>> changePassword(@RequestBody ReqChangePasswordDTO changePasswordDTO) throws IdInValidException{
+        this.userService.handleChangePassword(changePasswordDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Đã thay đổi mật khẩu"));
     }
+
 
 
 }

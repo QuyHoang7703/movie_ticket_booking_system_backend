@@ -65,7 +65,7 @@ public class SecurityConfiguration {
     //     return http.build();
     // }
    @Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
         .csrf(c -> c.disable())
         .cors(Customizer.withDefaults())

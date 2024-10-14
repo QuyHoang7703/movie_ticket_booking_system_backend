@@ -1,6 +1,7 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,12 +31,27 @@ public class S3Service {
     }
 
     public String uploadFile(MultipartFile file, String folderName) {
+        // return "abc";
         String originalFilename = file.getOriginalFilename();
-         String filePath = folderName + "/" + originalFilename;
+
+        String newFilename = UUID.randomUUID().toString() + "_" + originalFilename;
+
+//         String filePath = folderName + "/" + newFilename;
+        String filePath =  newFilename;
+
 
         try {
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(file.getSize()); //Set size for file
+            String contentType = file.getContentType(); // Lấy Content-Type từ MultipartFile
+            System.out.println(">>>>>>>>>>>> CONTENT TYPE: " + contentType);
+            if (contentType != null && contentType.startsWith("image/")) {
+                metadata.setContentType(contentType);
+            } else {
+                // Nếu không phải là hình ảnh, có thể đặt giá trị mặc định hoặc xử lý lỗi
+                throw new IllegalArgumentException("Uploaded file is not an image.");
+            }
+            // metadata.setContentType(contentType != null ? contentType : "multipart/form-data");
             // Push file to S3
             PutObjectResult putObjectResult = amazonS3.putObject(bucketName, filePath, file.getInputStream(), metadata);
             return getImageUrl(filePath);
