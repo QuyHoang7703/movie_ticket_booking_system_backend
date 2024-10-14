@@ -1,69 +1,56 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
 import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
-
-import lombok.RequiredArgsConstructor;
 import java.util.Optional;
 import java.util.UUID;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import lombok.RequiredArgsConstructor;
+
 
 @Service
 @RequiredArgsConstructor
 public class TokenService {
     private final EmailService emailService;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    @Value("${app.base.url}")
-    private String baseUrl;
 
-    public void sendVerificationEmail(String email, String token) {
-        String subject = "Xác thực email của bạn";
-        
-        // Tạo liên kết chứa token để người dùng có thể nhấp vào
-        String resetPasswordLink = baseUrl + "/api/v1/auth/verify-token?token=" + token + "&email=" + email;
-    
-        String body = "<h1>Xác thực tài khoản của bạn</h1>"
-                    + "<p>Chào bạn,</p>"
-                    + "<p>Để xác thực tài khoản của bạn, vui lòng nhấp vào liên kết bên dưới:</p>"
-                    + "<a href=\"" + resetPasswordLink + "\">Xác thực tài khoản</a>"
-                    + "<p>Liên kết này sẽ hết hạn sau 2 phút.</p>"
-                    + "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>"
-                    + "<p>Trân trọng,<br>Đội ngũ hỗ trợ của chúng tôi</p>";
-    
-        this.emailService.sendEmail(email, subject, body);
-    }
+    public void createToken(String email) throws IdInValidException {
+        Optional<User> optionalAccount = this.userRepository.findByEmail(email);
+        if(optionalAccount.isPresent()) {
+            User user = optionalAccount.get();
+            if((user.isVerified())==false) {
+                throw new IdInValidException("Tài khoản này đã bị kháo");
+            }
 
-    public void createToken(String email) {
-        Optional<User> optionalUser = this.userRepository.findByEmail(email);
-        if(optionalUser.isPresent()){
-            User user = optionalUser.get();
             String token = UUID.randomUUID().toString();
             user.setToken(token);
-            user.setExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
-            this.userRepository.save(user);
-            sendVerificationEmail(email, token);
+            user.setExpirationTime(Instant.now().plus(3, ChronoUnit.MINUTES));
 
+
+            this.userRepository.save(user);
+            this.sendRequestForgotPassword(email, user.getName(), token);
+            System.out.println(">>>>>>> Token: " + token);
+        }else{
+            throw new IdInValidException("Email này chưa được đăng ký trong hệ thống");
         }
     }
 
-    public boolean validToken(String email, String token) {
-        Optional<User> optionalUser = this.userRepository.findByEmail(email);
-        if(optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            
-            boolean checkToken = user.getToken() != null && user.getToken().equals(token);
-            // Instant ExpirationTime = user.getExpirationTime();
+
+    public boolean isValidToken(String token) {
+        Optional<User> optionalAccount = this.userRepository.findByToken(token);
+        if(optionalAccount.isPresent()) {
+            User user = optionalAccount.get();
+            // boolean checkToken = user.getToken() != null && user.getToken().equals(token);
             boolean checkTokenExpired = Instant.now().isAfter(user.getExpirationTime());
-            if(checkToken && !checkTokenExpired) {
-                user.setToken(null);
-                user.setExpirationTime(null);
+            if(!checkTokenExpired) {
+                // user.setToken(null);
+                // user.setRefreshToken(null);
                 this.userRepository.save(user);
                 return true;
             }
@@ -71,5 +58,20 @@ public class TokenService {
         return false;
     }
 
+    public void sendRequestForgotPassword(String email, String name, String token) {
+        String subject = "Yêu cầu đặt lại mật khẩu";
+
+
+        // Tạo liên kết chứa token để người dùng nhấn vào => chuyển đến fe xử lý
+        String resetPasswordLink = "http://localhost:3000/verify-token?token=" + token;
+
+        // Tạo nội dung email từ template HTML
+        Context context = new Context();
+        context.setVariable("userName", name);
+        context.setVariable("resetPasswordLink", resetPasswordLink);
+
+        this.emailService.sendEmail2(email, subject, "reset_password_email", context);
+
+    }
     
 }

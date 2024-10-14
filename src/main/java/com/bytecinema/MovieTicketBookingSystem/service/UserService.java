@@ -1,13 +1,15 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqChangePasswordDTO;
+
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
+
 import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqRegisterDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.request.resetPassword.ReqRestPassword;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.register.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.RoleRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
@@ -84,9 +86,9 @@ public class UserService {
     }
 
     public User fetchUserByRefreshTokenAndEmail(String refreshToken, String email) {
-        Optional<User> optionalAccount = this.userRepository.findByRefreshTokenAndEmail(refreshToken, email);
-        if(optionalAccount.isPresent()) {
-            return optionalAccount.get();
+        Optional<User> optionaluser = this.userRepository.findByRefreshTokenAndEmail(refreshToken, email);
+        if(optionaluser.isPresent()) {
+            return optionaluser.get();
         }
         return null;
     }
@@ -126,28 +128,20 @@ public class UserService {
        
     }
 
-    public void updatePassword(ReqRestPassword request) throws IdInValidException{
-        if(!request.getPassword().equals(request.getConfirmPassword())){
-            throw new IdInValidException("Mật khẩu và mật khẩu xác nhận không trùng khớp. Vui lòng nhập lại");
+    public void handleChangePassword(ReqChangePasswordDTO changePasswordDTO) throws IdInValidException {
+        Optional<User> optionalUser = this.userRepository.findByToken(changePasswordDTO.getToken());
+        if(!optionalUser.isPresent()) {
+            throw new IdInValidException("Token không hợp lệ");
         }
+        if(!changePasswordDTO.getPassword().equals(changePasswordDTO.getConfirmPassword())) {
+            throw new IdInValidException("Mật khẩu không trùng khớp");
+        }
+        User user = optionalUser.get();
 
-        User user = userRepository.findByEmail(request.getEmail())
-        .orElseThrow(() -> new IdInValidException("Không tồn tại tài khoản này trong hệ thống"));
-        if(!user.isVerified()) {
-            throw new IdInValidException("Tài khoản này chưa được xác thực");
-        }
-
-        if(user.getOtp()!=null) {
-            throw new IdInValidException("Vui lòng xác thực OTP");
-        }
-
-        if(user.getExpirationTime()==null|| Instant.now().isAfter(user.getExpirationTime()) ){
-            throw new IdInValidException("Bạn chưa xác thực OTP");
-        }
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRefreshToken(null);
-        // user.setExpirationTime(null);
-        // user.setToken(null);
+        String decodedPassword = this.passwordEncoder.encode(changePasswordDTO.getPassword());
+        user.setPassword(decodedPassword);
+        user.setExpirationTime(null);
+        user.setToken(null);
         this.userRepository.save(user);
 
     }

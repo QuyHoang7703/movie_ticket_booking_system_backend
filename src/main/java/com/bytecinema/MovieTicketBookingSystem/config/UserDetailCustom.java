@@ -27,7 +27,7 @@ public class UserDetailCustom implements UserDetailsService{
             throw new UsernameNotFoundException("Email/Password không hợp lệ");
         }
         Role role = user.getRole();
-        System.out.println(">>>>>> Role_ " + role.getName());
+        System.out.println(">>>>>> Role_" + role.getName());
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
