@@ -1,4 +1,4 @@
-package com.bytecinema.MovieTicketBookingSystem.service;
+package com.bytecinema.MovieTicketBookingSystem.config;
 
 import java.util.Collections;
 
@@ -8,12 +8,14 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
+import com.bytecinema.MovieTicketBookingSystem.domain.Role;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
+import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 
 @Component("userDetailService")
 public class UserDetailCustom implements UserDetailsService{
     private final UserService userService;
-    
+
     public UserDetailCustom(UserService userService) {
         this.userService = userService;
     }
@@ -24,11 +26,13 @@ public class UserDetailCustom implements UserDetailsService{
         if (user == null) {
             throw new UsernameNotFoundException("Email/Password không hợp lệ");
         }
+        Role role = user.getRole();
+        System.out.println(">>>>>> Role_ " + role.getName());
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.getName()))
         );
     }
-    
+
 }
