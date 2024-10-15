@@ -1,6 +1,7 @@
 package com.bytecinema.MovieTicketBookingSystem.controller;
 
 import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqChangePasswordDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -42,6 +43,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("api/v1")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
@@ -127,18 +129,28 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         User user = this.userService.handleGetUserByEmail(ReqLoginDTO.getEmail());
+        log.info("User role: " + user.getRole().getName());
         ResLoginDTO res = new ResLoginDTO();
         if(user != null){
-            // ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName(), user.getPhoneNumber(), user.getBirthDay(), user.getGender(), user.getAvatar());
-            // ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName(), user.getAvatar());
+//             ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
+//             userLogin.setId(user.getId());
+//             userLogin.setEmail(user.getEmail());
+//             userLogin.setName(user.getName());
+//             userLogin.setPhoneNumber(user.getPhoneNumber());
+//             userLogin.setGender(user.getGender());
+//             userLogin.setAvatar(user.getAvatar());
+//             userLogin.setRole(user.getRole());
+
             ResLoginDTO.UserLogin userLogin = ResLoginDTO.UserLogin.builder()
                                                 .id(user.getId())
                                                 .email(user.getEmail())
                                                 .name(user.getName())
                                                 .phoneNumber(user.getPhoneNumber())
                                                 .gender(user.getGender())
-                                                .avatar(user.getAvatar())  
+                                                .avatar(user.getAvatar())
+                                                .role(user.getRole().getName())
                                                 .build();
+
 
 
             res.setUserLogin(userLogin);
@@ -200,8 +212,17 @@ public class AuthController {
                                                 .phoneNumber(user.getPhoneNumber())
                                                 // .birthDay(user.getBirthDay())
                                                 .gender(user.getGender())
-                                                .avatar(user.getAvatar())  
+                                                .avatar(user.getAvatar())
+                                                .role(user.getRole().getName())
                                                 .build();
+//            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
+//            userLogin.setId(user.getId());
+//            userLogin.setEmail(user.getEmail());
+//            userLogin.setName(user.getName());
+//            userLogin.setPhoneNumber(user.getPhoneNumber());
+//            userLogin.setGender(user.getGender());
+//            userLogin.setAvatar(user.getAvatar());
+//            userLogin.setRole(user.getRole());
 
             res.setUserLogin(userLogin);
         }

@@ -1,5 +1,6 @@
 package com.bytecinema.MovieTicketBookingSystem.dto.response.login;
 
+import com.bytecinema.MovieTicketBookingSystem.domain.Role;
 import com.bytecinema.MovieTicketBookingSystem.util.constant.GenderEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -36,12 +37,13 @@ public class ResLoginDTO {
 
         private String phoneNumber;
 
-        // @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-        // private LocalDate birthDay;
+//        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+//        private LocalDate birthDay;
 
         private  GenderEnum gender;
 
         private String avatar;
+        private String role;
     }
 
     @Getter
