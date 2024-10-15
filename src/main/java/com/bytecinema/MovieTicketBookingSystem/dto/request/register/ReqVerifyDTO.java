@@ -1,11 +1,11 @@
-package com.bytecinema.MovieTicketBookingSystem.dto.registerDTO;
+package com.bytecinema.MovieTicketBookingSystem.dto.request.register;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class VerifyDTO {
+public class ReqVerifyDTO {
     private String email;
     private String otp;
 }

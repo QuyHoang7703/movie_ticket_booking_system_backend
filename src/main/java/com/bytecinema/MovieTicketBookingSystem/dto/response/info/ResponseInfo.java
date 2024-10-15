@@ -1,4 +1,4 @@
-package com.bytecinema.MovieTicketBookingSystem.dto;
+package com.bytecinema.MovieTicketBookingSystem.dto.response.info;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 
-public class ResponseInfo {
-    private String info;
+public class ResponseInfo<T> {
+    private T info;
 }
 

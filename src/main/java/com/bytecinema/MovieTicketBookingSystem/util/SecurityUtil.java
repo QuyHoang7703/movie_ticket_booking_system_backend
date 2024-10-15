@@ -20,18 +20,24 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
 
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.domain.Role;
+import com.bytecinema.MovieTicketBookingSystem.domain.User;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.service.UserService;
 import com.nimbusds.jose.util.Base64;
-import java.util.Optional;;
+
+import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
+import java.util.List;
+import java.util.ArrayList;
 
 @Service
+@RequiredArgsConstructor
 public class SecurityUtil {
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS512;
     private final JwtEncoder jwtEncoder;
-    
-    public SecurityUtil(JwtEncoder jwtEncoder) {
-        this.jwtEncoder = jwtEncoder;
-    }
+    private final UserService userService;
 
     @Value("${bytecinema.jwt.base64-secret}")
     private String jwtKey;
@@ -59,29 +65,31 @@ public class SecurityUtil {
 
     }
 
-    public String createAccessToken(String username, ResLoginDTO loginDTO) {
+    public String createAccessToken(String username, ResLoginDTO ReqLoginDTO) {
         Instant now = Instant.now();
         Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
 
         //Create header
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
+        User user = this.userService.handleGetUserByEmail(username);
+        String role = user.getRole().getName();
 
         // Create payload
         JwtClaimsSet claims = JwtClaimsSet.builder()
             .issuedAt(now)
             .expiresAt(validity)
             .subject(username)
-            .claim("user", loginDTO.getUserLogin())
-            .build();   
+            .claim("user", ReqLoginDTO.getUserLogin())
+            .claim("role",  "ROLE_" + role)
+            .build();
 
-       
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
 
     }
 
-     public String createRefreshToken(String username, ResLoginDTO loginDTO) {
+     public String createRefreshToken(String username, ResLoginDTO ReqLoginDTO) {
         Instant now = Instant.now();
-        Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
+        Instant validity = now.plus(this.refreshTokenExpiration, ChronoUnit.SECONDS);
 
         //Create header
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
@@ -91,10 +99,9 @@ public class SecurityUtil {
             .issuedAt(now)
             .expiresAt(validity)
             .subject(username)
-            .claim("user", loginDTO.getUserLogin())
-            .build();   
+            .claim("user", ReqLoginDTO.getUserLogin())
+            .build();
 
-       
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
 
     }

@@ -1,4 +1,5 @@
 package com.bytecinema.MovieTicketBookingSystem.config;
+import java.time.Duration;
 import java.util.Arrays;
 
 import org.springframework.context.annotation.Bean;
@@ -27,10 +28,12 @@ public class CorsConfig {
 
 
         // gửi kèm cookies hay không
-        configuration.setAllowCredentials(true);
+//        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(Boolean.valueOf(true));
 
         // thời gian pre-flight request có thể cache (tính theo seconds)
-        configuration.setMaxAge(3600L);
+//        configuration.setMaxAge(3600L);
+        configuration.setMaxAge(Duration.ofDays(3600L));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         // cấu hình cors cho tất cả api

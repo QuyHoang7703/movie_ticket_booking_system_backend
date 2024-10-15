@@ -1,0 +1,126 @@
+name: Movie Ticket Backend Pipeline
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    name: Compile Project
+    env:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET: ${{ secrets.AWS_SECRET }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Jdk 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+      - name: Run Unit Test
+        env:
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET: ${{ secrets.AWS_SECRET }}
+        run: mvn clean compile
+
+  unit-test:
+    runs-on: ubuntu-latest
+    name: Running Unit Test
+    services:
+      db:
+        image: minhquang3010/movie_booking_database:1.0
+        env:
+          MYSQL_ROOT_PASSWORD: admin123
+          MYSQL_DATABASE: movie_ticket_booking
+          MYSQL_USER: movie_ticket_booking
+          MYSQL_PASSWORD: movie_ticket_booking
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Jdk 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+      - name: Wait for MySQL to be ready
+        run: |
+          # Chờ MySQL service khởi động hoàn tất
+          while ! mysqladmin ping -h "127.0.0.1" --silent; do
+            echo "Waiting for MySQL..."
+            sleep 5
+          done
+
+      - name: Run Unit Test
+        env:
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET: ${{ secrets.AWS_SECRET }}
+        run: mvn clean test
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build Backend
+    needs: [compile, unit-test]
+    env:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET: ${{ secrets.AWS_SECRET }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Jdk 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+      - name: Run Unit Test
+        run: mvn clean compile
+
+  build-image:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET: ${{ secrets.AWS_SECRET }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build & Push to DockerHub
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            minhquang3010/movie_booking_api:1.0.3
+            minhquang3010/movie_booking_api:latest
+          build-args: |
+            PROFILE=dev
+            APP_VERSION=1.0.3

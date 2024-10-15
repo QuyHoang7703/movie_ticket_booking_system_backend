@@ -1,17 +1,21 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqChangePasswordDTO;
+
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
-import com.bytecinema.MovieTicketBookingSystem.dto.ResetPasswordRequest;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
+
+import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqRegisterDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.register.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.RoleRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
+
+import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -20,20 +24,15 @@ import java.util.Random;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    public UserService(UserRepository userRepository, RoleRepository roleRepository,
-                         PasswordEncoder passwordEncoder, EmailService emailService) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
-    }
-
-    public User handleRegisterUser(RegisterDTO registerDTO) throws IdInValidException{
+    private final OtpService otpService;
+   
+    public User handleRegisterUser(ReqRegisterDTO registerDTO) throws IdInValidException{
         Optional<Role> optionalRole = this.roleRepository.findById(registerDTO.getRoleId());
         if(!optionalRole.isPresent()) {
             throw new IdInValidException("Role is invalid");
@@ -44,12 +43,12 @@ public class UserService {
         user.setPassword(registerDTO.getPassword());
         user.setRole(role);
         user.setExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
-        String otp = this.generateOTP();
+        String otp = this.otpService.generateOTP();
         
         String otpDecoded = this.passwordEncoder.encode(otp);
         user.setOtp(otpDecoded);
         //Send OTP to email register
-        this.sendVerificationEmail(registerDTO.getEmail(), otp);
+        this.otpService.sendVerificationEmail(registerDTO.getEmail(), otp);
 
         // Add attribute of user
         return this.userRepository.save(user);
@@ -87,9 +86,9 @@ public class UserService {
     }
 
     public User fetchUserByRefreshTokenAndEmail(String refreshToken, String email) {
-        Optional<User> optionalAccount = this.userRepository.findByRefreshTokenAndEmail(refreshToken, email);
-        if(optionalAccount.isPresent()) {
-            return optionalAccount.get();
+        Optional<User> optionaluser = this.userRepository.findByRefreshTokenAndEmail(refreshToken, email);
+        if(optionaluser.isPresent()) {
+            return optionaluser.get();
         }
         return null;
     }
@@ -111,48 +110,7 @@ public class UserService {
         return resUser;
     }
 
-    private String generateOTP() {
-        Random random = new Random();
-        int otpValue = 100000 + random.nextInt(900000);
-        
-        return String.valueOf(otpValue);
-    }
-
-    public void sendVerificationEmail(String email, String otp) {
-        String subject = "Email verification";
-        String body = "Your verification OTP is: " + otp;
-        this.emailService.sendEmail(email, subject, body);
-    }
-
-    public void verify(String email, String otp) throws IdInValidException{
-        Optional<User> optionalUser = this.userRepository.findByEmail(email);
-        if(optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            boolean isValidOtp = this.passwordEncoder.matches(otp, user.getOtp());
-            boolean isOtpExpired = Instant.now().isAfter(user.getExpirationTime());
-            if(isValidOtp && !isOtpExpired){
-                user.setVerified(true);
-                user.setOtp(null);
-                user.setExpirationTime(null);
-                this.userRepository.save(user);
-            }else {
-                throw new IdInValidException("OTP đã hết hạn");
-            }
-        }
-    }
-
-    public void resendOtp(String email) {
-        String otp = this.generateOTP();
-        String otpDecoded = this.passwordEncoder.encode(otp);
-        Optional<User> optionalUser = this.userRepository.findByEmail(email);
-        if(optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            user.setOtp(otpDecoded);
-            user.setExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
-            this.userRepository.save(user);
-        }
-        this.sendVerificationEmail(email, otp);
-    }
+   
 
     public User handleUpdateUser(User reqUser) {
         long id = reqUser.getId();
@@ -170,21 +128,25 @@ public class UserService {
        
     }
 
-    public void updatePassword(ResetPasswordRequest request) throws IdInValidException{
-        if(!request.getPassword().equals(request.getConfirmPassword())){
-            throw new IdInValidException("Mật khẩu và mật khẩu xác nhận không trùng khớp. Vui lòng nhập lại");
+    public void handleChangePassword(ReqChangePasswordDTO changePasswordDTO) throws IdInValidException {
+        Optional<User> optionalUser = this.userRepository.findByToken(changePasswordDTO.getToken());
+        if(!optionalUser.isPresent()) {
+            throw new IdInValidException("Token không hợp lệ");
         }
+        if(!changePasswordDTO.getPassword().equals(changePasswordDTO.getConfirmPassword())) {
+            throw new IdInValidException("Mật khẩu không trùng khớp");
+        }
+        User user = optionalUser.get();
 
-        User user = userRepository.findByEmail(request.getEmail())
-        .orElseThrow(() -> new IdInValidException("Không tồn tại email này trong hệ thống"));
-        if(user.getExpirationTime()==null || Instant.now().isAfter(user.getExpirationTime())){
-            throw new IdInValidException("Yêu cầu cập nhập lại mật khẩu của bạn đã hết hiệu lực sử dụng");
-        }
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRefreshToken(null);
+        String decodedPassword = this.passwordEncoder.encode(changePasswordDTO.getPassword());
+        user.setPassword(decodedPassword);
+        user.setExpirationTime(null);
+        user.setToken(null);
         this.userRepository.save(user);
 
     }
+
+   
 
     
 

@@ -1,10 +1,9 @@
 package com.bytecinema.MovieTicketBookingSystem.controller;
 
+import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqChangePasswordDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -21,18 +20,15 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.bytecinema.MovieTicketBookingSystem.domain.RestResponse;
 import com.bytecinema.MovieTicketBookingSystem.domain.User;
-import com.bytecinema.MovieTicketBookingSystem.dto.ResetPasswordRequest;
-import com.bytecinema.MovieTicketBookingSystem.dto.ResponseInfo;
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.LoginDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO.UserGetAccount;
-import com.bytecinema.MovieTicketBookingSystem.dto.loginDTO.ResLoginDTO.UserLogin;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.RegisterDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.ResUserInfoDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.UserInfoDTO;
-import com.bytecinema.MovieTicketBookingSystem.dto.registerDTO.VerifyDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.login.ReqLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqRegisterDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqUserInfoDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqVerifyDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.info.ResponseInfo;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.login.ResLoginDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.register.ResUserInfoDTO;
+import com.bytecinema.MovieTicketBookingSystem.service.OtpService;
 import com.bytecinema.MovieTicketBookingSystem.service.S3Service;
 import com.bytecinema.MovieTicketBookingSystem.service.TokenService;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
@@ -47,19 +43,24 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("api/v1")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-    private final TokenService tokenService;
     private final S3Service s3Service;
+    private final OtpService otpService;
+    private final TokenService tokenService;
     @Value("${bytecinema.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
+    @Value("${bytecinema.jwt.access-token-validity-in-seconds}")
+    private long accessTokenExpiration;
+
     @PostMapping("auth/register")
     @ApiMessage("Register a new user")
-    public ResponseEntity<ResponseInfo> createUser(@RequestBody RegisterDTO registerDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo<String>> createUser(@RequestBody ReqRegisterDTO registerDTO) throws IdInValidException{
         if(this.userService.checkAvailableEmail(registerDTO.getEmail())){
             User user = this.userService.handleGetUserByEmail(registerDTO.getEmail());
             if(!user.isVerified()) {
@@ -74,90 +75,102 @@ public class AuthController {
         String hashPassword = this.passwordEncoder.encode(registerDTO.getPassword());
         registerDTO.setPassword(hashPassword);
         User newUser = this.userService.handleRegisterUser(registerDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseInfo("Kiểm tra email để lấy OTP"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseInfo<>("Kiểm tra email để lấy OTP"));
     }
 
-    @PostMapping("auth/register-info")
+    @PostMapping(value="auth/register-info", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ApiMessage("Register a new user")
-    public ResponseEntity<ResUserInfoDTO> addInfoUser(@RequestParam(value="fileAvatar", required = false) MultipartFile file, @RequestPart("user_info") UserInfoDTO userInfoDTO) throws IdInValidException{
+    public ResponseEntity<ResUserInfoDTO> addInfoUser(@RequestParam(value="fileAvatar", required = false) MultipartFile file, @RequestPart("user_info") ReqUserInfoDTO userInfoDTO) throws IdInValidException{
         User user = this.userService.handleGetUserByEmail(userInfoDTO.getEmail());
         if(user==null) {
             throw new IdInValidException("Không tồn tại email này trong hệ thống");
         }
         user.setName(userInfoDTO.getName());
-        user.setBirthDay(userInfoDTO.getBirthDay());          
+        user.setBirthDay(userInfoDTO.getBirthDay());
         user.setGender(userInfoDTO.getGender());
         user.setPhoneNumber(userInfoDTO.getPhoneNumber());
         if(file!=null) {
-            String avatar = this.s3Service.uploadFile(file, "avatars");
+            String avatar = this.s3Service.uploadFile(file, "");
             user.setAvatar(avatar);
         }
 
-
-        
         return ResponseEntity.ok(this.userService.convertToResUserInfoDTO(this.userService.handleUpdateUser(user)));
     }
 
     @PostMapping("/auth/verify-otp")
-    public ResponseEntity<ResponseInfo> verify(@RequestBody VerifyDTO verifyDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo<String>> verify(@RequestBody ReqVerifyDTO verifyDTO) throws IdInValidException{
         if(!this.userService.checkAvailableEmail(verifyDTO.getEmail())){
             throw new IdInValidException("Email not found");
         }
-        this.userService.verify(verifyDTO.getEmail(), verifyDTO.getOtp());
-        
-        return ResponseEntity.ok(new ResponseInfo("Verified successful"));
+        this.otpService.verify(verifyDTO.getEmail(), verifyDTO.getOtp());
+
+        return ResponseEntity.ok(new ResponseInfo<>("Verified successful"));
     }
 
     @PostMapping("/auth/resend")
-    public ResponseEntity<ResponseInfo> resendOTP(@RequestParam String email) throws IdInValidException{
-        // if(this.userService.checkAvailableEmail(email)){
-        //     throw new IdInValidException("Email not found");
-        // }
-        this.userService.resendOtp(email);
-        return ResponseEntity.ok(new ResponseInfo("Resend OTP"));
+    public ResponseEntity<ResponseInfo<String>> resendOTP(@RequestParam String email) throws IdInValidException{
+        this.otpService.resendOtp(email);
+        return ResponseEntity.ok(new ResponseInfo<>("Resend OTP"));
 
     }
 
 
     @PostMapping("/auth/login")
     @ApiMessage("Login successfully")
-    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO) throws IdInValidException{
-        if(!this.userService.handleGetUserByEmail(loginDTO.getEmail()).isVerified()){
+    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO ReqLoginDTO) throws IdInValidException{
+        if(!this.userService.handleGetUserByEmail(ReqLoginDTO.getEmail()).isVerified()){
             throw new IdInValidException("User not found !!!");
         }
-        //Load username and password into Security  
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());
+        //Load username and password into Security
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(ReqLoginDTO.getEmail(), ReqLoginDTO.getPassword());
         //User Authentication => overwrite LoadUserByUsername in UserDetailService
         Authentication authentication = this.authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        
-        User user = this.userService.handleGetUserByEmail(loginDTO.getEmail());
+
+        User user = this.userService.handleGetUserByEmail(ReqLoginDTO.getEmail());
+        log.info("User role: " + user.getRole().getName());
         ResLoginDTO res = new ResLoginDTO();
         if(user != null){
-            // ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName(), user.getPhoneNumber(), user.getBirthDay(), user.getGender(), user.getAvatar());
-            // ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(user.getId(), user.getEmail(), user.getName(), user.getAvatar());
+//             ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
+//             userLogin.setId(user.getId());
+//             userLogin.setEmail(user.getEmail());
+//             userLogin.setName(user.getName());
+//             userLogin.setPhoneNumber(user.getPhoneNumber());
+//             userLogin.setGender(user.getGender());
+//             userLogin.setAvatar(user.getAvatar());
+//             userLogin.setRole(user.getRole());
+
             ResLoginDTO.UserLogin userLogin = ResLoginDTO.UserLogin.builder()
                                                 .id(user.getId())
                                                 .email(user.getEmail())
                                                 .name(user.getName())
                                                 .phoneNumber(user.getPhoneNumber())
                                                 .gender(user.getGender())
-                                                .avatar(user.getAvatar())  
+                                                .avatar(user.getAvatar())
+                                                .role(user.getRole().getName())
                                                 .build();
 
-                                                
+
+
             res.setUserLogin(userLogin);
         }
-    
-        // Create token when authentication is successful
+
+        // // Create token when authentication is successful
         String accessToken = this.securityUtil.createAccessToken(authentication.getName(), res);
         res.setAccessToken(accessToken);
+        ResponseCookie accCookies = ResponseCookie
+                                                .from("access_token", accessToken)
+                                                // .httpOnly(true)
+                                                .secure(true)
+                                                .path("/")
+                                                .maxAge(accessTokenExpiration)
+                                                .build();
         
 
         // Create refresh token 
-        String refresh_token = this.securityUtil.createRefreshToken(loginDTO.getEmail(), res);
-        this.userService.updateRefreshToken(refresh_token, loginDTO.getEmail());
+        String refresh_token = this.securityUtil.createRefreshToken(ReqLoginDTO.getEmail(), res);
+        this.userService.updateRefreshToken(refresh_token, ReqLoginDTO.getEmail());
         ResponseCookie resCookies = ResponseCookie
                                                 .from("refresh_token", refresh_token)
                                                 .httpOnly(true)
@@ -168,7 +181,10 @@ public class AuthController {
                                                 .build();
         
         
-        return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
+        return ResponseEntity
+                            .status(HttpStatus.OK)
+                            .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                            .header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
     }
 
 
@@ -196,14 +212,31 @@ public class AuthController {
                                                 .phoneNumber(user.getPhoneNumber())
                                                 // .birthDay(user.getBirthDay())
                                                 .gender(user.getGender())
-                                                .avatar(user.getAvatar())  
+                                                .avatar(user.getAvatar())
+                                                .role(user.getRole().getName())
                                                 .build();
+//            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
+//            userLogin.setId(user.getId());
+//            userLogin.setEmail(user.getEmail());
+//            userLogin.setName(user.getName());
+//            userLogin.setPhoneNumber(user.getPhoneNumber());
+//            userLogin.setGender(user.getGender());
+//            userLogin.setAvatar(user.getAvatar());
+//            userLogin.setRole(user.getRole());
 
             res.setUserLogin(userLogin);
         }
   
         String accessToken = this.securityUtil.createAccessToken(email, res);
         res.setAccessToken(accessToken);
+
+        ResponseCookie accCookies = ResponseCookie
+                                                .from("access_token", accessToken)
+                                                // .httpOnly(true)
+                                                .secure(true)
+                                                .path("/")
+                                                .maxAge(accessTokenExpiration)
+                                                .build();
         
 
         // Create refresh token 
@@ -219,7 +252,11 @@ public class AuthController {
                                                 .build();
         
         
-        return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
+        return ResponseEntity
+                            .status(HttpStatus.OK)
+                            .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                            .header(HttpHeaders.SET_COOKIE, resCookies.toString())
+                            .body(res);
      
     }
 
@@ -244,37 +281,29 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(null);
     }
 
-    @PostMapping("/auth/reset-password-request")
-    public ResponseEntity<ResponseInfo> forgotPassword(@RequestParam("email") String email) {
-        User user = this.userService.handleGetUserByEmail(email);
-        if(user == null) {
-            try {
-                throw new IdInValidException("Không tồn tại email này trong hệ thống");
-            } catch (IdInValidException e) {
-                e.printStackTrace();
-            }
-        }
+    @GetMapping("/auth/forgot-password")
+    @ApiMessage("Send request restore password")
+    public ResponseEntity<ResponseInfo<String>> sendRequestForgotPassword(@RequestParam("email") String email) throws IdInValidException {
         this.tokenService.createToken(email);
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Vui lòng kiểm tra email để đặt lại mật khẩu"));
-    }
-
-    @GetMapping("/auth/verify-token")
-    public ResponseEntity<Boolean> checkToken(@RequestParam("token") String token, @RequestParam("email") String email) throws IdInValidException{
-        boolean checkValid = this.tokenService.validToken(email, token);
-        return ResponseEntity.status(HttpStatus.OK).body(checkValid);
-    }
-
-    @PostMapping("/auth/reset-password")
-    public ResponseEntity<ResponseInfo> resetPassword(@RequestBody ResetPasswordRequest request) {
-
-        try {
-            this.userService.updatePassword(request);
-        } catch (IdInValidException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo(e.getMessage()));
-        }
        
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo("Đã cập nhập lại mật khẩu. Vui lòng đăng nhập lại"));
-    } 
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Yêu cầu của bạn đã được gửi tới email"));
+    }
+
+    
+    @GetMapping("/auth/verify-token")
+    @ApiMessage("Send request restore password")
+    public ResponseEntity<ResponseInfo<Boolean>> checkValidToken(@RequestParam("token") String token) {
+        
+       
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>(this.tokenService.isValidToken(token)));
+    }
+
+    @PostMapping("/auth/change-password")
+    public ResponseEntity<ResponseInfo<String>> changePassword(@RequestBody ReqChangePasswordDTO changePasswordDTO) throws IdInValidException{
+        this.userService.handleChangePassword(changePasswordDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Đã thay đổi mật khẩu"));
+    }
+
+
+
 }
