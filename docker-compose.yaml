@@ -5,7 +5,7 @@ services:
       context: .
       target: development
     ports:
-      - 8081:8080
+      - 8080:8080
       - 8000:8000
     depends_on:
       db:
