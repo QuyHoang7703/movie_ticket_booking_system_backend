@@ -18,18 +18,15 @@ public class ResLoginDTO {
     private String accessToken;
     
     private UserLogin userLogin;
+
     @Getter
     @Setter
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
     public static class UserLogin {
-        // private long id;
-        // private String email;
-        // private String name;
 
-        // private String avatar;
-         private long id;
+        private long id;
 
         private String email;
 
@@ -53,5 +50,15 @@ public class ResLoginDTO {
     public static class UserGetAccount {
         private UserLogin user;
     }
+
+//    @Getter
+//    @Setter
+//    @AllArgsConstructor
+//    @NoArgsConstructor
+//    public static class RoleUser {
+//        private String name;
+//    }
+
+
     
 }

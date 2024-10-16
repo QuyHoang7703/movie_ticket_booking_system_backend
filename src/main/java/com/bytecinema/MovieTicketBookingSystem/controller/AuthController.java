@@ -89,8 +89,9 @@ public class AuthController {
         user.setBirthDay(userInfoDTO.getBirthDay());
         user.setGender(userInfoDTO.getGender());
         user.setPhoneNumber(userInfoDTO.getPhoneNumber());
+
         if(file!=null) {
-            String avatar = this.s3Service.uploadFile(file, "");
+            String avatar = this.s3Service.uploadFile(file);
             user.setAvatar(avatar);
         }
 
@@ -148,6 +149,7 @@ public class AuthController {
                                                 .phoneNumber(user.getPhoneNumber())
                                                 .gender(user.getGender())
                                                 .avatar(user.getAvatar())
+
                                                 .role(user.getRole().getName())
                                                 .build();
 

@@ -3,27 +3,39 @@ package com.bytecinema.MovieTicketBookingSystem.dto.response.register;
 import com.bytecinema.MovieTicketBookingSystem.util.constant.GenderEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 @Getter
 @Setter
 public class ResUserInfoDTO {
-     private long id;
+    private UserInfo userInfo;
 
-    private String email;
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UserInfo {
+        private long id;
 
-    private String name;
+        private String email;
 
-    private String phoneNumber;
+        private String name;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    private LocalDate birthDay;
+        private String phoneNumber;
 
-    private  GenderEnum gender;
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+        private LocalDate birthDay;
 
-    private String avatar;
+        private  GenderEnum gender;
+
+        private String avatar;
+
+        private String role;
+
+
+
+    }
+
 
   
 }

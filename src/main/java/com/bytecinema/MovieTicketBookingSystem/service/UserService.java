@@ -1,8 +1,14 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
+import com.amazonaws.services.codecommit.model.UserInfo;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqChangePasswordDTO;
 
 
+import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqUserInfoDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.pagination.ResultPaginationDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -16,12 +22,15 @@ import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +40,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final OtpService otpService;
+    private final S3Service s3Service;
    
     public User handleRegisterUser(ReqRegisterDTO registerDTO) throws IdInValidException{
         Optional<Role> optionalRole = this.roleRepository.findById(registerDTO.getRoleId());
@@ -55,10 +65,24 @@ public class UserService {
 
     }
 
-    public User fetchUserById(long id) {
+    public ResUserInfoDTO fetchUserById(long id) {
         Optional<User> userOptional = this.userRepository.findById(id);
         if(userOptional.isPresent()) {
-            return userOptional.get();
+            User user = userOptional.get();
+            ResUserInfoDTO resUserInfoDTO = new ResUserInfoDTO();
+
+            ResUserInfoDTO.UserInfo userInfo = new ResUserInfoDTO.UserInfo();
+            userInfo.setId(user.getId());
+            userInfo.setEmail(user.getEmail());
+            userInfo.setName(user.getName());
+            userInfo.setPhoneNumber(user.getPhoneNumber());
+            userInfo.setBirthDay(user.getBirthDay());
+            userInfo.setGender(user.getGender());
+            userInfo.setAvatar(user.getAvatar());
+
+            resUserInfoDTO.setUserInfo(userInfo);
+            return resUserInfoDTO;
+
         }
         return null;
     }
@@ -98,34 +122,40 @@ public class UserService {
     }
     
     public ResUserInfoDTO convertToResUserInfoDTO(User user){
-        ResUserInfoDTO resUser = new ResUserInfoDTO();
-        resUser.setId(user.getId());
-        resUser.setEmail(user.getEmail());
-        resUser.setName(user.getName());
-        resUser.setPhoneNumber(user.getPhoneNumber());
-        resUser.setBirthDay(user.getBirthDay());
-        resUser.setGender(user.getGender());
-        resUser.setAvatar(user.getAvatar());
-    
-        return resUser;
+        ResUserInfoDTO resUserInfoDTO = new ResUserInfoDTO();
+        ResUserInfoDTO.UserInfo userInfo = new ResUserInfoDTO.UserInfo();
+        userInfo.setId(user.getId());
+        userInfo.setEmail(user.getEmail());
+        userInfo.setName(user.getName());
+        userInfo.setPhoneNumber(user.getPhoneNumber());
+        userInfo.setBirthDay(user.getBirthDay());
+        userInfo.setGender(user.getGender());
+        userInfo.setAvatar(user.getAvatar());
+        userInfo.setRole(user.getRole().getName());
+
+
+        resUserInfoDTO.setUserInfo(userInfo);
+        return resUserInfoDTO;
     }
 
    
 
     public User handleUpdateUser(User reqUser) {
         long id = reqUser.getId();
-        User userUpdate = this.fetchUserById(id);
-        if(userUpdate != null) {
-            // userUpdate.setPassword(reqUser.getPassword());
-            userUpdate.setName(reqUser.getName());
-            userUpdate.setPhoneNumber(reqUser.getPhoneNumber());
-            userUpdate.setGender(reqUser.getGender());
-            userUpdate.setAvatar(reqUser.getAvatar());
-            userUpdate.setBirthDay(reqUser.getBirthDay());
+        Optional<User> optionalUser = this.userRepository.findById(id);
+        if(optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            user.setName(reqUser.getName());
+            user.setPhoneNumber(reqUser.getPhoneNumber());
+            user.setGender(reqUser.getGender());
+            user.setAvatar(reqUser.getAvatar());
+            user.setBirthDay(reqUser.getBirthDay());
             // userUpdate.setLockReason(reqUser.getLockReason());
+            return this.userRepository.save(user);
         }
-        return this.userRepository.save(userUpdate);
-       
+        return null;
+
+
     }
 
     public void handleChangePassword(ReqChangePasswordDTO changePasswordDTO) throws IdInValidException {
@@ -143,6 +173,43 @@ public class UserService {
         user.setExpirationTime(null);
         user.setToken(null);
         this.userRepository.save(user);
+
+    }
+
+    public ResultPaginationDTO fetchAllUsers(Specification<User> specification, Pageable pageable) {
+        Page<User> pageUser = this.userRepository.findAll(specification, pageable);
+
+        ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber()+1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(pageUser.getTotalPages());
+        meta.setTotal(pageUser.getTotalElements());
+        resultPaginationDTO.setMeta(meta);
+
+        List<ResUserInfoDTO> resUserInfoDTOList = pageUser.getContent().stream().map(user -> convertToResUserInfoDTO(user))
+                        .collect(Collectors.toList());
+
+        resultPaginationDTO.setResult(resUserInfoDTOList);
+        return resultPaginationDTO;
+
+    }
+
+    public ResUserInfoDTO updateUserInfo(MultipartFile avatar, ReqUserInfoDTO requestUserInfoDTO) throws IdInValidException {
+        User user = this.userRepository.findById(requestUserInfoDTO.getId())
+                .orElseThrow(() -> new IdInValidException("Không tồn tại user với id: " + requestUserInfoDTO.getId()));
+//        user.setEmail(requestUserInfoDTO.getEmail());
+        user.setName(requestUserInfoDTO.getName());
+        user.setBirthDay(requestUserInfoDTO.getBirthDay());
+        user.setGender(requestUserInfoDTO.getGender());
+        user.setPhoneNumber(requestUserInfoDTO.getPhoneNumber());
+        if(avatar!=null) {
+            String urlAvatar = this.s3Service.uploadFile(avatar);
+            user.setAvatar(urlAvatar);
+        }
+        this.userRepository.save(user);
+
+        return this.convertToResUserInfoDTO(user);
 
     }
 

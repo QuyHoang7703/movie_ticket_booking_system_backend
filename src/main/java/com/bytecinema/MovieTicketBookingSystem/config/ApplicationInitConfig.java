@@ -1,6 +1,7 @@
 package com.bytecinema.MovieTicketBookingSystem.config;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
+import com.bytecinema.MovieTicketBookingSystem.domain.User;
 import com.bytecinema.MovieTicketBookingSystem.repository.RoleRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ApplicationInitConfig {
     private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Bean
     ApplicationRunner applicationRunner() {
@@ -33,6 +36,7 @@ public class ApplicationInitConfig {
                 userRole.setName("USER");
                 this.roleRepository.save(userRole);
             }
+
         };
     }
     
