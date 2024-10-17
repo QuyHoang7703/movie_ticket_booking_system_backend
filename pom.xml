@@ -114,7 +114,11 @@
             <artifactId>aws-java-sdk</artifactId>
             <version>1.12.318</version>
         </dependency>
-		
+
+		<!-- Ví dụ về cách thêm phụ thuộc vào Jackson trong pom.xml -->
+
+
+
 	</dependencies>
 
 	<build>

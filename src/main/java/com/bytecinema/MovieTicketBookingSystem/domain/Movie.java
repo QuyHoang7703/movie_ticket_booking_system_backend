@@ -31,6 +31,9 @@ public class Movie {
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
     private String length;
+    private String actors;
+    private String nation;
+    private String director;
     private Instant releaseDay;
     private Instant createAt;
     private Instant updateAt;
