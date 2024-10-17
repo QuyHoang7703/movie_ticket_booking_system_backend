@@ -4,8 +4,10 @@ services:
   server:
     image: minhquang3010/movie_booking_api:1.0.3
     ports:
-      - "8080:8080"
-      - "8000:8000"
+
+      - 8080:8080
+      - 8000:8000
+
     depends_on:
       db:
         condition: service_healthy
