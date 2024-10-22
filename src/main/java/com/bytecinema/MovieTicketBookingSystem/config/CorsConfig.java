@@ -15,7 +15,7 @@ public class CorsConfig {
 
         // cho phép các URL nào có thể kết nối tới backend
         configuration.setAllowedOrigins(
-                Arrays.asList("http://localhost:3000", "http://localhost:4173", "http://localhost:5173"));
+                Arrays.asList("http://localhost:3000", "http://localhost:4173", "http://localhost:5173", "https://byte-cinema-website.vercel.app"));
                 // Arrays.asList("*"));
 
         // các method nào đc kết nối

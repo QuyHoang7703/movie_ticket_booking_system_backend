@@ -74,7 +74,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Fetch all user")
     public ResponseEntity<ResultPaginationDTO> fetchAllUser(@Filter Specification<User> specification,
-                                                            @PageableDefault(size = 2) Pageable pageable) {
+                                                            @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(this.userService.fetchAllUsers(specification, pageable));
 
     }
