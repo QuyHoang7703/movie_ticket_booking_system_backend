@@ -70,7 +70,7 @@ public class SecurityConfiguration {
         .csrf(c -> c.disable())
         .cors(Customizer.withDefaults())
         .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/", "/api/v1/auth/**", "/api/v1/roles", "/api/v1/genres").permitAll()
+                .requestMatchers("/", "/api/v1/auth/**", "/api/v1/roles", "/api/v1/genres/**", "/api/v1/movies/**").permitAll()
                 .anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwtConfigurer -> jwtConfigurer

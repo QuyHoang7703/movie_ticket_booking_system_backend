@@ -49,7 +49,7 @@ public class GenresService {
                 ResMovieDTO dto = new ResMovieDTO();
                 dto.setId(movie.getId());
                 dto.setName(movie.getName());
-                dto.setLength(movie.getLength());
+                dto.setDuration(movie.getDuration().toString());
                 dto.setReleaseDay(movie.getReleaseDay());
                 dto.setActors(movie.getActors());
                 dto.setDirector(movie.getDirector());
@@ -108,7 +108,7 @@ public class GenresService {
                         ResMovieDTO dto = new ResMovieDTO();
                         dto.setId(movie.getId());
                         dto.setName(movie.getName());
-                        dto.setLength(movie.getLength());
+                        dto.setDuration(movie.getDuration().toString());
                         dto.setReleaseDay(movie.getReleaseDay());
                         dto.setActors(movie.getActors());
                         dto.setDirector(movie.getDirector());

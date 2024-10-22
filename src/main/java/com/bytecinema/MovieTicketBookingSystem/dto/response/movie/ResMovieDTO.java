@@ -3,6 +3,8 @@ package com.bytecinema.MovieTicketBookingSystem.dto.response.movie;
 import java.time.Instant;
 import java.util.List;
 
+import com.bytecinema.MovieTicketBookingSystem.dto.response.screening.ResScreeningDTO;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +13,7 @@ import lombok.Setter;
 public class ResMovieDTO {
     private long id;
     private String name;
-    private String length;
+    private String duration;
     private Instant releaseDay;
     private List<ResMovieGenreDTO> movieGenres;
     private List<String> imagePaths;
@@ -19,14 +21,15 @@ public class ResMovieDTO {
     private String director;
     private String nation;
     private String description;
+    private List<ResScreeningDTO> screenings;
 
     // Constructors
     public ResMovieDTO() {}
 
-    public ResMovieDTO(long id, String name, String length, Instant releaseDay, List<ResMovieGenreDTO> movieGenres) {
+    public ResMovieDTO(long id, String name, String duration, Instant releaseDay, List<ResMovieGenreDTO> movieGenres) {
         this.id = id;
         this.name = name;
-        this.length = length;
+        this.duration = duration;
         this.releaseDay = releaseDay;
         this.movieGenres = movieGenres;
     }

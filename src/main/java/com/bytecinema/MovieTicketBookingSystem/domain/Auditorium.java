@@ -28,8 +28,5 @@ public class Auditorium {
 
     @OneToMany(mappedBy = "auditorium", fetch = FetchType.LAZY)
     private List<Screening> screenings;
-
-    
-
     
 }
