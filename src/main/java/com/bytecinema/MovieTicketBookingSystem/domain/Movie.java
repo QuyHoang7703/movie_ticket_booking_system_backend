@@ -15,6 +15,8 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 // import org.hibernate.mapping.List;
@@ -30,7 +32,7 @@ public class Movie {
     private String name;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
-    private String length;
+    private Duration duration;
     private String actors;
     private String nation;
     private String director;

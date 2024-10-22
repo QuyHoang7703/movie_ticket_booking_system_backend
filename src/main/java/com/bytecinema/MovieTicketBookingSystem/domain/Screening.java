@@ -25,6 +25,7 @@ public class Screening {
     private long id;
     private Instant startTime;
     private BigDecimal ticketPrice;
+    private Instant endTime;
 
     @ManyToOne
     @JoinColumn(name = "movie_id")
@@ -35,7 +36,7 @@ public class Screening {
     private Auditorium auditorium;
 
     @OneToMany(mappedBy = "screening")
-    private List<Booking> screenings;
+    private List<Booking> bookings;
 
     
 }

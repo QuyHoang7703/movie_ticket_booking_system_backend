@@ -14,7 +14,7 @@ public class ReqAddMovieDTO {
     private String nation;
     private String director;
     private String description;
-    private String length;
+    private String duration;
     private String name;
     private Instant releaseDay;
     private List<Long> genreIds;

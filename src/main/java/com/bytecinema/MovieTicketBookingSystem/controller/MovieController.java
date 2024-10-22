@@ -68,4 +68,11 @@ public ResponseEntity<ResMovieDTO> getMovieById(@PathVariable Long id) {
     
     return ResponseEntity.ok(movieDTO); // Trả về phim nếu tìm thấy
 }
+
+    @GetMapping("/movies/upcoming")
+    public ResponseEntity<List<ResMovieDTO>> getMoviesUpcoming()
+    {
+        List<ResMovieDTO> movies = moviesService.getMoviesUpcoming();
+        return ResponseEntity.ok(movies);
+    }
 }
