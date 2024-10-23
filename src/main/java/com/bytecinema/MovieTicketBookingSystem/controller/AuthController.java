@@ -133,15 +133,6 @@ public class AuthController {
         log.info("User role: " + user.getRole().getName());
         ResLoginDTO res = new ResLoginDTO();
         if(user != null){
-//             ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
-//             userLogin.setId(user.getId());
-//             userLogin.setEmail(user.getEmail());
-//             userLogin.setName(user.getName());
-//             userLogin.setPhoneNumber(user.getPhoneNumber());
-//             userLogin.setGender(user.getGender());
-//             userLogin.setAvatar(user.getAvatar());
-//             userLogin.setRole(user.getRole());
-
             ResLoginDTO.UserLogin userLogin = ResLoginDTO.UserLogin.builder()
                                                 .id(user.getId())
                                                 .email(user.getEmail())
@@ -149,7 +140,6 @@ public class AuthController {
                                                 .phoneNumber(user.getPhoneNumber())
                                                 .gender(user.getGender())
                                                 .avatar(user.getAvatar())
-
                                                 .role(user.getRole().getName())
                                                 .build();
 
@@ -161,26 +151,13 @@ public class AuthController {
         // // Create token when authentication is successful
         String accessToken = this.securityUtil.createAccessToken(authentication.getName(), res);
         res.setAccessToken(accessToken);
-        ResponseCookie accCookies = ResponseCookie
-                                                .from("access_token", accessToken)
-                                                // .httpOnly(true)
-                                                .secure(true)
-                                                .path("/")
-                                                .maxAge(accessTokenExpiration)
-                                                .build();
+        ResponseCookie accCookies = this.securityUtil.createAccessCookie("access_token", accessToken, accessTokenExpiration);
         
 
         // Create refresh token 
         String refresh_token = this.securityUtil.createRefreshToken(ReqLoginDTO.getEmail(), res);
         this.userService.updateRefreshToken(refresh_token, ReqLoginDTO.getEmail());
-        ResponseCookie resCookies = ResponseCookie
-                                                .from("refresh_token", refresh_token)
-                                                .httpOnly(true)
-                                                .secure(true)
-                                                .path("/")
-                                                .maxAge(refreshTokenExpiration)
-                                                // .domain("example.com")
-                                                .build();
+        ResponseCookie resCookies = this.securityUtil.createRefreshCookie("refresh_token", refresh_token, refreshTokenExpiration);
         
         
         return ResponseEntity
@@ -217,43 +194,19 @@ public class AuthController {
                                                 .avatar(user.getAvatar())
                                                 .role(user.getRole().getName())
                                                 .build();
-//            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
-//            userLogin.setId(user.getId());
-//            userLogin.setEmail(user.getEmail());
-//            userLogin.setName(user.getName());
-//            userLogin.setPhoneNumber(user.getPhoneNumber());
-//            userLogin.setGender(user.getGender());
-//            userLogin.setAvatar(user.getAvatar());
-//            userLogin.setRole(user.getRole());
-
             res.setUserLogin(userLogin);
         }
   
         String accessToken = this.securityUtil.createAccessToken(email, res);
         res.setAccessToken(accessToken);
 
-        ResponseCookie accCookies = ResponseCookie
-                                                .from("access_token", accessToken)
-                                                // .httpOnly(true)
-                                                .secure(true)
-                                                .path("/")
-                                                .maxAge(accessTokenExpiration)
-                                                .build();
-        
+        ResponseCookie accCookies = this.securityUtil.createAccessCookie("access_token", accessToken, accessTokenExpiration);
 
         // Create refresh token 
         String refresh_token = this.securityUtil.createRefreshToken(email, res);
         this.userService.updateRefreshToken(refresh_token, email);
-        ResponseCookie resCookies = ResponseCookie
-                                                .from("refresh_token", refresh_token)
-                                                .httpOnly(true)
-                                                .secure(true)
-                                                .path("/")
-                                                .maxAge(refreshTokenExpiration)
-                                                // .domain("example.com")
-                                                .build();
-        
-        
+        ResponseCookie resCookies = this.securityUtil.createRefreshCookie("refresh_token", refresh_token, refreshTokenExpiration);
+
         return ResponseEntity
                             .status(HttpStatus.OK)
                             .header(HttpHeaders.SET_COOKIE, accCookies.toString())
@@ -271,16 +224,13 @@ public class AuthController {
             throw new IdInValidException("Access token is invalid");
         }
         this.userService.updateRefreshToken(null, username);
-        ResponseCookie resCookies = ResponseCookie
-                                                .from("refresh_token", null)
-                                                .httpOnly(true)
-                                                .secure(true)
-                                                .path("/")
-                                                .maxAge(0)
-                                                // .domain("example.com")
-                                                .build();
+        ResponseCookie accCookies = this.securityUtil.createAccessCookie("access_token", null, 0);
+        ResponseCookie resCookies = this.securityUtil.createRefreshCookie("refresh_token", null, 0);
         System.out.println(">>>>> Logout account username: " + username);
-        return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(null);
+        return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                .header(HttpHeaders.SET_COOKIE, resCookies.toString())
+                .body(null);
     }
 
     @GetMapping("/auth/forgot-password")

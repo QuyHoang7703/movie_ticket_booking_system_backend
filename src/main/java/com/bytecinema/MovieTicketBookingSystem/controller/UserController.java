@@ -1,11 +1,13 @@
 package com.bytecinema.MovieTicketBookingSystem.controller;
 
+import com.bytecinema.MovieTicketBookingSystem.domain.Role;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.pagination.ResultPaginationDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.register.ResUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.S3Service;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 import com.turkraft.springfilter.boot.Filter;
+import jakarta.persistence.criteria.Join;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,7 +31,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("api/v1")
 public class UserController {
     private final UserService userService;
-//    private PasswordEncoder passwordEncoder;
     private final S3Service s3Service;
 
     @GetMapping("/users/{id}")
@@ -74,8 +75,14 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Fetch all user")
     public ResponseEntity<ResultPaginationDTO> fetchAllUser(@Filter Specification<User> specification,
-                                                            @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(this.userService.fetchAllUsers(specification, pageable));
+                                                            @PageableDefault(size = 8) Pageable pageable) {
+        Specification<User> roleNotAdmminSpec = (root, query, criteriaBuilder) -> {
+            Join<User, Role> userRole = root.join("role");
+            return criteriaBuilder.notEqual(userRole.get("name"), "ADMIN");
+        };
+        Specification<User> finalSpec = specification.and(roleNotAdmminSpec);
+
+        return ResponseEntity.status(HttpStatus.OK).body(this.userService.fetchAllUsers(finalSpec, pageable));
 
     }
 

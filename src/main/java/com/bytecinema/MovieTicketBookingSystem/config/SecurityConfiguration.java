@@ -65,7 +65,7 @@ public class SecurityConfiguration {
     //     return http.build();
     // }
    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
     http
         .csrf(c -> c.disable())
         .cors(Customizer.withDefaults())
@@ -76,20 +76,11 @@ public class SecurityConfiguration {
                 .jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(jwtDecoder())
                         .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                ))
+                )
+                .authenticationEntryPoint(customAuthenticationEntryPoint))
         .formLogin(f -> f.disable())
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore((request, response, chain) -> {
-            // In ra thông tin Authentication trước khi vào Controller
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            System.out.println(">>> Authentication details: " + authentication);
-            if (authentication != null) {
-                authentication.getAuthorities().forEach(grantedAuthority -> {
-                    System.out.println(">>> Granted Authority: " + grantedAuthority.getAuthority());
-                });
-            }
-            chain.doFilter(request, response);
-        }, CorsFilter.class);
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
 
     return http.build();
 }

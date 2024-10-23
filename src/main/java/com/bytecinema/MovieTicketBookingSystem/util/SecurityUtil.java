@@ -7,6 +7,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -127,5 +128,25 @@ public class SecurityUtil {
             return s;
         }
         return null;
+    }
+
+    public ResponseCookie createAccessCookie(String name, String value, long maxAge) {
+        return ResponseCookie.from(name, value)
+                //.httpOnly(true)   // HTTP-only for security
+                .secure(true)     // Secure flag
+                .path("/")        // Cookie valid for entire site
+                .maxAge(maxAge)   // Expiration time
+                .build();
+
+    }
+
+    public ResponseCookie createRefreshCookie(String name, String value, long maxAge) {
+        return ResponseCookie.from(name, value)
+                .httpOnly(true)   // HTTP-only for security
+                .secure(true)     // Secure flag
+                .path("/")        // Cookie valid for entire site
+                .maxAge(maxAge)   // Expiration time
+                .build();
+
     }
 }

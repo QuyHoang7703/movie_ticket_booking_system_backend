@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -25,8 +26,17 @@ public class GlobalException {
         res.setError("Internal Server Error");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
     }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<RestResponse<Object>> handleAccessDeniedException(AuthorizationDeniedException ex) {
+        RestResponse<Object> res = new RestResponse<Object>();
+        res.setStatusCode(HttpStatus.FORBIDDEN.value());
+        res.setMessage(ex.getMessage());
+        res.setError("Access Denied");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+    }
+
    @ExceptionHandler(value = {
-        
         UsernameNotFoundException.class,
         BadCredentialsException.class,
         NullPointerException.class,

@@ -79,6 +79,7 @@ public class UserService {
             userInfo.setBirthDay(user.getBirthDay());
             userInfo.setGender(user.getGender());
             userInfo.setAvatar(user.getAvatar());
+            userInfo.setRole(user.getRole().getName());
 
             resUserInfoDTO.setUserInfo(userInfo);
             return resUserInfoDTO;
