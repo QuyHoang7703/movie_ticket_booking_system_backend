@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -75,4 +76,39 @@ public ResponseEntity<ResMovieDTO> getMovieById(@PathVariable Long id) {
         List<ResMovieDTO> movies = moviesService.getMoviesUpcoming();
         return ResponseEntity.ok(movies);
     }
+
+    @GetMapping("/movies/search")
+    public ResponseEntity<List<ResMovieDTO>> searchMovie(@RequestParam String name)
+    {
+        List<ResMovieDTO> movies = moviesService.getMoviesByName(name);
+        return ResponseEntity.ok(movies);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+@PutMapping(value = "/movies/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<ResMovieDTO> updateMovie(
+        @PathVariable Long id,
+        @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles,
+        @RequestPart("movie-info") ReqAddMovieDTO updateMovieDTO) {
+
+    // Danh sách để lưu trữ đường dẫn hình ảnh đã tải lên
+    List<String> pathImages = new ArrayList<>();
+
+    // Nếu có file hình ảnh, tải lên và thêm vào danh sách đường dẫn
+    if (imageFiles != null && !imageFiles.isEmpty()) {
+        for (MultipartFile imageFile : imageFiles) {
+            String file = s3Service.uploadFile(imageFile);
+            pathImages.add(file);
+        }
+    }
+
+    // Cập nhật danh sách đường dẫn hình ảnh vào DTO
+    updateMovieDTO.setImagePaths(pathImages);
+    
+    // Gọi service để cập nhật phim
+    ResMovieDTO updatedMovie = moviesService.updateMovie(id, updateMovieDTO);
+
+    // Trả về kết quả
+    return ResponseEntity.ok(updatedMovie);
+}
 }

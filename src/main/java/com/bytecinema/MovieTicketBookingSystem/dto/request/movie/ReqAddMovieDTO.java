@@ -17,6 +17,7 @@ public class ReqAddMovieDTO {
     private String duration;
     private String name;
     private Instant releaseDay;
+    private String pathTrailer;
     private List<Long> genreIds;
     private List<String> imagePaths;
 }

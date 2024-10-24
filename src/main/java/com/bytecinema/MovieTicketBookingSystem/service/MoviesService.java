@@ -46,6 +46,7 @@ public class MoviesService {
         movie.setActors(addMovieDTO.getActors());
         movie.setNation(addMovieDTO.getNation());
         movie.setDirector(addMovieDTO.getDirector());
+        movie.setPathTrailer(addMovieDTO.getPathTrailer());
 
         Movie savedMovie = movieRepository.save(movie);
 
@@ -57,6 +58,7 @@ public class MoviesService {
         resMovieDTO.setDirector(savedMovie.getDirector());
         resMovieDTO.setNation(savedMovie.getNation());
         resMovieDTO.setDescription(savedMovie.getDescription());
+        resMovieDTO.setPathTrailer(savedMovie.getPathTrailer());
 
         if (addMovieDTO.getGenreIds() != null && !addMovieDTO.getGenreIds().isEmpty())
         {
@@ -67,9 +69,10 @@ public class MoviesService {
                 MovieGenre movieGenre = new MovieGenre();
                 movieGenre.setMovie(savedMovie);
                 movieGenre.setGenre(genre);
+                
                 movieGenresRepository.save(movieGenre);
 
-                resMoviGenreDTO.add(new ResMovieGenreDTO(genre.getName(), genre.getDescription()));
+                resMoviGenreDTO.add(new ResMovieGenreDTO(genre.getName(), genre.getDescription(), genre.getId()));
             
             }
         }
@@ -91,6 +94,59 @@ public class MoviesService {
         return resMovieDTO;
     }
 
+
+    @Transactional
+public ResMovieDTO updateMovie(Long id, ReqAddMovieDTO updateMovieDTO) {
+    // Kiểm tra sự tồn tại của phim
+    Movie movie = movieRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
+
+    // Cập nhật thông tin phim
+    movie.setName(updateMovieDTO.getName());
+    movie.setDescription(updateMovieDTO.getDescription());
+    movie.setReleaseDay(updateMovieDTO.getReleaseDay());
+    movie.setDuration(convertToDuration(updateMovieDTO.getDuration()));
+    movie.setActors(updateMovieDTO.getActors());
+    movie.setNation(updateMovieDTO.getNation());
+    movie.setDirector(updateMovieDTO.getDirector());
+    movie.setPathTrailer(updateMovieDTO.getPathTrailer());
+
+    // Lưu phim đã cập nhật
+    Movie savedMovie = movieRepository.save(movie);
+
+    // Cập nhật thể loại
+    movieGenresRepository.deleteByMovieId(id); // Xóa các thể loại cũ
+    List<ResMovieGenreDTO> resMoviGenreDTO = new ArrayList<>();
+    if (updateMovieDTO.getGenreIds() != null && !updateMovieDTO.getGenreIds().isEmpty()) {
+        for (Long genreId : updateMovieDTO.getGenreIds()) {
+            Genre genre = genreRepository.findById(genreId)
+                .orElseThrow(() -> new RuntimeException("Genre not found with id: " + genreId));
+                
+            MovieGenre movieGenre = new MovieGenre();
+            movieGenre.setMovie(savedMovie);
+            movieGenre.setGenre(genre);
+            movieGenresRepository.save(movieGenre);
+
+            resMoviGenreDTO.add(new ResMovieGenreDTO(genre.getName(), genre.getDescription(), genre.getId()));
+        }
+    }
+
+    // Cập nhật hình ảnh
+    imagesRepository.deleteByMovieId(id); // Xóa hình ảnh cũ
+    if (updateMovieDTO.getImagePaths() != null && !updateMovieDTO.getImagePaths().isEmpty()) {
+        for (String imagePath : updateMovieDTO.getImagePaths()) {
+            Images image = new Images();
+            image.setImagePath(imagePath);
+            image.setMovie(savedMovie);
+            imagesRepository.save(image);
+        }
+    }
+
+    // Trả về thông tin phim đã cập nhật
+    return convertMovieToResMovieDTO(savedMovie);
+}
+
+    
     public List<ResMovieDTO> getAllMovies()
     {
         List<Movie> movies = movieRepository.findAll();
@@ -125,6 +181,18 @@ public class MoviesService {
         return movieDTOs;
     }
 
+    public List<ResMovieDTO> getMoviesByName(String name)
+    {
+        List<Movie> movies = movieRepository.findByNameStartingWithIgnoreCase(name);
+
+        List<ResMovieDTO> movieDTOs = movies.stream().map(movie -> {
+            return convertMovieToResMovieDTO(movie);
+        })
+        .collect(Collectors.toList());
+
+        return movieDTOs;
+    }
+
     private Duration convertToDuration(String durationString)
     {
         long minutes = Long.parseLong(durationString);
@@ -141,12 +209,14 @@ public class MoviesService {
                 dto.setDirector(movie.getDirector());
                 dto.setNation(movie.getNation());
                 dto.setDescription(movie.getDescription());
+                dto.setPathTrailer(movie.getPathTrailer());
 
                 List<ResMovieGenreDTO> genreDTOs = movie.getMovieGenres().stream()
                 .map(movieGenre -> {
                     ResMovieGenreDTO genreDTO = new ResMovieGenreDTO();
                     genreDTO.setName(movieGenre.getGenre().getName());
                     genreDTO.setDescription(movieGenre.getGenre().getDescription());
+                    genreDTO.setId(movieGenre.getId());
                     return genreDTO;
                 })
                 .collect(Collectors.toList());

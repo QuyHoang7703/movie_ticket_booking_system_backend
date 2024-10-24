@@ -1,15 +1,22 @@
 package com.bytecinema.MovieTicketBookingSystem.dto.response.movie;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class ResMovieGenreDTO {
     private String name;
     private String description;
+    private Long id;
 
     // Constructors
     public ResMovieGenreDTO() {}
 
-    public ResMovieGenreDTO(String name, String description) {
+    public ResMovieGenreDTO(String name, String description, Long id) {
         this.name = name;
         this.description = description;
+        this.id = id;
     }
 
 

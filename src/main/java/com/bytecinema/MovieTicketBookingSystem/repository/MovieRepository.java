@@ -11,4 +11,5 @@ import java.time.Instant;
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long>{
     List<Movie> findByReleaseDayAfter(Instant releaseDay);
+    List<Movie> findByNameStartingWithIgnoreCase(String name);
 }

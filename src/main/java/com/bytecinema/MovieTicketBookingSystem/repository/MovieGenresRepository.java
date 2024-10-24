@@ -8,4 +8,5 @@ import com.bytecinema.MovieTicketBookingSystem.domain.MovieGenre;
 @Repository
 public interface MovieGenresRepository extends JpaRepository<MovieGenre, Long> {
     List<MovieGenre> findByGenreId(Long genreId);
+    void deleteByMovieId(Long movieId);
 }

@@ -39,6 +39,7 @@ public class Movie {
     private Instant releaseDay;
     private Instant createAt;
     private Instant updateAt;
+    private String pathTrailer;
     
     @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
     private List<MovieGenre> movieGenres;
