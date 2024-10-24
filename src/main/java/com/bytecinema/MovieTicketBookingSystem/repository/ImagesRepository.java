@@ -7,5 +7,5 @@ import com.bytecinema.MovieTicketBookingSystem.domain.Images;
 
 @Repository
 public interface ImagesRepository extends JpaRepository<Images, Long> {
-    
+    void deleteByMovieId(Long movieId);
 }

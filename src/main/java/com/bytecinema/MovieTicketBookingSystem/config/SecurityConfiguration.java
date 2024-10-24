@@ -8,6 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -70,7 +71,9 @@ public class SecurityConfiguration {
         .csrf(c -> c.disable())
         .cors(Customizer.withDefaults())
         .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/", "/api/v1/auth/**", "/api/v1/roles", "/api/v1/genres/**", "/api/v1/movies/**").permitAll()
+                .requestMatchers("/", "/api/v1/auth/**", "/api/v1/roles").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/genres/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/movies/**").permitAll()
                 .anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwtConfigurer -> jwtConfigurer
