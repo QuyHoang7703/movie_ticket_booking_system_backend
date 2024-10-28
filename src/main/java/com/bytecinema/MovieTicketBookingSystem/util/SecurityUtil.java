@@ -145,7 +145,8 @@ public class SecurityUtil {
                 .httpOnly(true)   // HTTP-only for security
                 .secure(true)     // Secure flag
                 .path("/")        // Cookie valid for entire site
-                .maxAge(maxAge)   // Expiration time
+                .maxAge(maxAge)
+                //.domain("byte-cinema-website.vercel.app")// Expiration time
                 .build();
 
     }
