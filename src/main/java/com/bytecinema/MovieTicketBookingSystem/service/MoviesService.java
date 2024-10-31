@@ -106,7 +106,7 @@ public ResMovieDTO updateMovie(Long id, ReqAddMovieDTO updateMovieDTO) {
         .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
 
     List<Movie> existedMovies = movieRepository.findByNameIgnoreCase(updateMovieDTO.getName());
-    if (!existedMovies.isEmpty() && movie.getName() != updateMovieDTO.getName())
+    if (!existedMovies.isEmpty() && !movie.getName().equals(updateMovieDTO.getName()))
     {
         throw new RuntimeException("Không thể cập nhật 1 phim đã tồn tại");
     }
