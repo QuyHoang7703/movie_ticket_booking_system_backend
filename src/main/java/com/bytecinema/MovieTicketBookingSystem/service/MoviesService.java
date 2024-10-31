@@ -32,7 +32,11 @@ public class MoviesService {
     @Transactional
     public ResMovieDTO addMovie(ReqAddMovieDTO addMovieDTO)
     {
-
+        List<Movie> existedMovies = movieRepository.findByNameIgnoreCase(addMovieDTO.getName());
+        if (!existedMovies.isEmpty())
+        {
+            throw new RuntimeException("Tên phim đã tồn tại, vui lòng chọn tên khác");
+        }
         ResMovieDTO resMovieDTO = new ResMovieDTO();
         List<ResMovieGenreDTO> resMoviGenreDTO = new ArrayList<ResMovieGenreDTO>();
         List<ResScreeningDTO> screenings = new ArrayList<ResScreeningDTO>();
@@ -100,6 +104,12 @@ public ResMovieDTO updateMovie(Long id, ReqAddMovieDTO updateMovieDTO) {
     // Kiểm tra sự tồn tại của phim
     Movie movie = movieRepository.findById(id)
         .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
+
+    List<Movie> existedMovies = movieRepository.findByNameIgnoreCase(updateMovieDTO.getName());
+    if (!existedMovies.isEmpty() && movie.getName() != updateMovieDTO.getName())
+    {
+        throw new RuntimeException("Không thể cập nhật 1 phim đã tồn tại");
+    }
 
     // Cập nhật thông tin phim
     movie.setName(updateMovieDTO.getName());

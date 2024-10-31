@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.List;
 
 import com.bytecinema.MovieTicketBookingSystem.dto.response.screening.ResScreeningDTO;
-
 import lombok.Getter;
 import lombok.Setter;
 

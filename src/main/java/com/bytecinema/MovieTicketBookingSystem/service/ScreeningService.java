@@ -15,6 +15,9 @@ import java.time.Instant;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.ZoneId;
+
 @Service
 @RequiredArgsConstructor
 public class ScreeningService {
@@ -101,5 +104,26 @@ public class ScreeningService {
             dto.setAuditoriumName(screening.getAuditorium().getName());
 
         return dto;
+    }
+
+    public List<ResScreeningDTO> getScreeningDTOByDay(LocalDate date)
+    {
+        Instant startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().minusSeconds(1);
+
+        List<Screening> screenings = screeningsRepository.findByStartTimeBetween(startOfDay, endOfDay);
+
+        return screenings.stream().map(screening -> {
+            ResScreeningDTO dto = new ResScreeningDTO();
+            dto.setId(screening.getId());
+            dto.setStartTime(screening.getStartTime());
+            dto.setEndTime(screening.getEndTime());
+            dto.setTicketPrice(screening.getTicketPrice());
+            dto.setMovieId(screening.getMovie().getId());
+            dto.setMovieName(screening.getMovie().getName());
+            dto.setAuditoriumId(screening.getAuditorium().getId());
+            dto.setAuditoriumName(screening.getAuditorium().getName());
+            return dto;
+        }).collect(Collectors.toList());
     }
 }
