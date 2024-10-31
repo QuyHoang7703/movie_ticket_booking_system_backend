@@ -39,7 +39,7 @@ public class ScreeningService {
 
         Instant endTime = request.getStartTime().plus(Duration.ofMinutes(request.getAdsDuration())).plus(movie.getDuration());
 
-        boolean isOverLapping = screeningsRepository.existsByAuditoriumAndStartTimeBetween(auditorium, request.getStartTime(), endTime);
+        boolean isOverLapping = screeningsRepository.existsByAuditoriumAndEndTimeGreaterThanAndStartTimeLessThan(auditorium, request.getStartTime(), endTime);
 
         if (isOverLapping)
         {

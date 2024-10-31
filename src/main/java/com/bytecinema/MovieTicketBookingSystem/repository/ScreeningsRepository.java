@@ -9,6 +9,6 @@ import java.util.List;
 
 @Repository
 public interface ScreeningsRepository extends JpaRepository<Screening, Long> {
-    boolean existsByAuditoriumAndStartTimeBetween(Auditorium auditorium, Instant startTime, Instant endTime);
+    boolean existsByAuditoriumAndEndTimeGreaterThanAndStartTimeLessThan(Auditorium auditorium, Instant startTime, Instant endTime);
     List<Screening> findByStartTimeBetween(Instant startOfDay, Instant endOfDay);
 }
