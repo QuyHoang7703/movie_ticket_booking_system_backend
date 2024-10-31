@@ -5,8 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import com.bytecinema.MovieTicketBookingSystem.domain.Auditorium;
 import com.bytecinema.MovieTicketBookingSystem.domain.Screening;
+import java.util.List;
 
 @Repository
 public interface ScreeningsRepository extends JpaRepository<Screening, Long> {
     boolean existsByAuditoriumAndStartTimeBetween(Auditorium auditorium, Instant startTime, Instant endTime);
+    List<Screening> findByStartTimeBetween(Instant startOfDay, Instant endOfDay);
 }

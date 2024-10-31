@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,8 @@ import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.MoviesService;
 import com.bytecinema.MovieTicketBookingSystem.service.S3Service;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import java.util.ArrayList;;
@@ -28,26 +31,48 @@ import java.util.ArrayList;;
 @RestController
 @RequestMapping("api/v1")
 @RequiredArgsConstructor
+@Validated
 public class MovieController {
     private final MoviesService moviesService;
     private final S3Service s3Service;
+
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value="/movies", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResMovieDTO> createMovie(@RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles, @RequestPart("movie-info") ReqAddMovieDTO addMovieDTO)
-    {
-        List<String> pathImages = new ArrayList<String>();
-        if (imageFiles != null && !imageFiles.isEmpty())
-        {
-            for (MultipartFile imageFile : imageFiles)
-            {
-                String file = s3Service.uploadFile(imageFile);
-                pathImages.add(file);
+    public ResponseEntity<?> createMovie(
+            @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles,
+            @Valid @RequestPart("movie-info") ReqAddMovieDTO addMovieDTO) {
+
+        List<String> pathImages = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        // Kiểm tra định dạng file
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            for (MultipartFile imageFile : imageFiles) {
+                String contentType = imageFile.getContentType();
+                if (contentType == null || 
+                    !(contentType.equals(MediaType.IMAGE_JPEG_VALUE) || 
+                      contentType.equals(MediaType.IMAGE_PNG_VALUE))) {
+
+                    errors.add("File " + imageFile.getOriginalFilename() + " phải có định dạng jpg, jpeg, hoặc png.");
+                } else {
+                    // Upload file nếu định dạng hợp lệ
+                    String file = s3Service.uploadFile(imageFile);
+                    pathImages.add(file);
+                }
             }
         }
 
+        // Trả về lỗi nếu có file không hợp lệ
+        if (!errors.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+        }
+
+        // Set danh sách ảnh đã upload vào đối tượng addMovieDTO
         addMovieDTO.setImagePaths(pathImages);
         ResMovieDTO savedMovie = moviesService.addMovie(addMovieDTO);
 
+        // Thiết lập đường dẫn ảnh cho đối tượng phản hồi
         savedMovie.setImagePaths(pathImages);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(savedMovie);
@@ -85,25 +110,37 @@ public ResponseEntity<ResMovieDTO> getMovieById(@PathVariable Long id) {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-@PutMapping(value = "/movies/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<ResMovieDTO> updateMovie(
+    @PutMapping(value = "/movies/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<?> updateMovie(
         @PathVariable Long id,
         @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles,
-        @RequestPart("movie-info") ReqAddMovieDTO updateMovieDTO) {
+        @Valid @RequestPart("movie-info") ReqAddMovieDTO updateMovieDTO) {
 
     // Danh sách để lưu trữ đường dẫn hình ảnh đã tải lên
     List<String> pathImages = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
 
-    // Nếu có file hình ảnh, tải lên và thêm vào danh sách đường dẫn
-    if (imageFiles != null && !imageFiles.isEmpty()) {
-        for (MultipartFile imageFile : imageFiles) {
-            String file = s3Service.uploadFile(imageFile);
-            pathImages.add(file);
+        // Kiểm tra định dạng file
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            for (MultipartFile imageFile : imageFiles) {
+                String contentType = imageFile.getContentType();
+                if (contentType == null || 
+                    !(contentType.equals(MediaType.IMAGE_JPEG_VALUE) || 
+                      contentType.equals(MediaType.IMAGE_PNG_VALUE))) {
+
+                    errors.add("File " + imageFile.getOriginalFilename() + " phải có định dạng jpg, jpeg, hoặc png.");
+                } else {
+                    // Upload file nếu định dạng hợp lệ
+                    String file = s3Service.uploadFile(imageFile);
+                    pathImages.add(file);
+                }
+            }
         }
-    }
 
-    // Cập nhật danh sách đường dẫn hình ảnh vào DTO
-    updateMovieDTO.setImagePaths(pathImages);
+        // Trả về lỗi nếu có file không hợp lệ
+        if (!errors.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+        }
     
     // Gọi service để cập nhật phim
     ResMovieDTO updatedMovie = moviesService.updateMovie(id, updateMovieDTO);

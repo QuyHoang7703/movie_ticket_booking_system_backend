@@ -23,6 +23,12 @@ public class AuditoriumService {
 
     
     public ResAuditoriumDTO addAuditorium(ReqAddAuditorium addAuditorium) {
+        List<Auditorium> existedAuditorium = auditoriumsRepository.findByNameIgnoreCase(addAuditorium.getName());
+        if (!existedAuditorium.isEmpty())
+        {
+            throw new RuntimeException("Name is used");
+        }
+
         Auditorium auditorium = new Auditorium();
         auditorium.setName(addAuditorium.getName());
         auditorium.setCapacity(addAuditorium.getCapacity());
@@ -112,6 +118,23 @@ private List<ResSeatDTO> convertToResSeatDTO(List<Seat> seats) {
 
     public List<ResAuditoriumDTO> getAuditoriums() {
         List<Auditorium> auditoriums = auditoriumsRepository.findAll();
+    
+        List<ResAuditoriumDTO> resAuditoriumDTOs = new ArrayList<>();
+        for (Auditorium auditorium : auditoriums) {
+            ResAuditoriumDTO dto = new ResAuditoriumDTO();
+            dto.setId(auditorium.getId());
+            dto.setName(auditorium.getName());
+            dto.setCapacity(auditorium.getCapacity());
+            dto.setSeats(convertToResSeatDTO(seatsRepository.findByAuditorium(auditorium)));
+            resAuditoriumDTOs.add(dto);
+        }
+    
+        return resAuditoriumDTOs;
+    }
+    
+    public List<ResAuditoriumDTO> getAuditoriumsByName(String name)
+    {
+        List<Auditorium> auditoriums = auditoriumsRepository.findByNameStartingWithIgnoreCase(name);
     
         List<ResAuditoriumDTO> resAuditoriumDTOs = new ArrayList<>();
         for (Auditorium auditorium : auditoriums) {

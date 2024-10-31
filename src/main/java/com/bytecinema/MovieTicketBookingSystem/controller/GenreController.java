@@ -3,6 +3,7 @@ package com.bytecinema.MovieTicketBookingSystem.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,18 +19,22 @@ import com.bytecinema.MovieTicketBookingSystem.dto.request.genre.ReqUpdateGenreD
 import com.bytecinema.MovieTicketBookingSystem.dto.response.genre.ResGenreDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.role.ResRoleDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.GenresService;
+
+import jakarta.validation.Valid;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import java.util.stream.Collectors;
 @RestController
 @RequestMapping("api/v1")
 @RequiredArgsConstructor
+@Validated
 public class GenreController {
     private final GenresService genresService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/genres")
-    public ResponseEntity<ResGenreDTO> createGenre(@RequestBody ReqAddGenreDTO genre)
+    public ResponseEntity<ResGenreDTO> createGenre(@Valid @RequestBody ReqAddGenreDTO genre)
     {
         Genre savedGenre = genresService.addGenre(genre.getName(), genre.getDescription());
 
@@ -48,7 +53,7 @@ public ResponseEntity<ResGenreDTO> getGenre(@PathVariable Long id) {
 }
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/genres/{id}")
-    public ResponseEntity<ResGenreDTO> updateGenre(@PathVariable Long id, @RequestBody ReqUpdateGenreDTO updateGenreDTO) {
+    public ResponseEntity<ResGenreDTO> updateGenre(@PathVariable Long id,@Valid @RequestBody ReqUpdateGenreDTO updateGenreDTO) {
         Genre updatedGenre = genresService.updateGenre(id, updateGenreDTO.getName(), updateGenreDTO.getDescription());
 
         ResGenreDTO genreDTO = new ResGenreDTO();

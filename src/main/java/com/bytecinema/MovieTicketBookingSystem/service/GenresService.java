@@ -22,6 +22,11 @@ public class GenresService {
     private final MovieGenresRepository movieGenresRepository;
     public Genre addGenre(String name, String description)
     {
+        List<Genre> existedGenre = genreRepository.findByNameIgnoreCase(name);
+        if (!existedGenre.isEmpty())
+        {
+            throw new RuntimeException("Tên thể loại đã được sử dụng");
+        }
         Genre genre = new Genre();
         genre.setName(name);
         genre.setDescription(description);
@@ -147,7 +152,11 @@ public class GenresService {
     public Genre updateGenre(Long id, String Name, String Description) {
         Genre genre = genreRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Genre not found with id: " + id));
-        
+        List<Genre> existedGenres = genreRepository.findByNameIgnoreCase(Name);
+        if (!existedGenres.isEmpty() && genre.getName() != Name)
+        {
+            throw new RuntimeException("Tên thể loại đã được sử dụng");
+        }
         if (Name != null)
         {
             genre.setName(Name);
