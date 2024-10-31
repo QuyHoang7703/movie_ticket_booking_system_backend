@@ -52,7 +52,7 @@ public class MovieController {
                 String contentType = imageFile.getContentType();
                 if (contentType == null || 
                     !(contentType.equals(MediaType.IMAGE_JPEG_VALUE) || 
-                      contentType.equals(MediaType.IMAGE_PNG_VALUE))) {
+                      contentType.equals(MediaType.IMAGE_PNG_VALUE)) || contentType.equals("image/jpg")) {
 
                     errors.add("File " + imageFile.getOriginalFilename() + " phải có định dạng jpg, jpeg, hoặc png.");
                 } else {
@@ -126,7 +126,7 @@ public ResponseEntity<?> updateMovie(
                 String contentType = imageFile.getContentType();
                 if (contentType == null || 
                     !(contentType.equals(MediaType.IMAGE_JPEG_VALUE) || 
-                      contentType.equals(MediaType.IMAGE_PNG_VALUE))) {
+                      contentType.equals(MediaType.IMAGE_PNG_VALUE) || contentType.equals("image/jpg"))) {
 
                     errors.add("File " + imageFile.getOriginalFilename() + " phải có định dạng jpg, jpeg, hoặc png.");
                 } else {
@@ -141,7 +141,7 @@ public ResponseEntity<?> updateMovie(
         if (!errors.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
         }
-    
+    updateMovieDTO.setImagePaths(pathImages);
     // Gọi service để cập nhật phim
     ResMovieDTO updatedMovie = moviesService.updateMovie(id, updateMovieDTO);
 

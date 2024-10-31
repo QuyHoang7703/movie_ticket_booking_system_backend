@@ -153,7 +153,7 @@ public class GenresService {
         Genre genre = genreRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Genre not found with id: " + id));
         List<Genre> existedGenres = genreRepository.findByNameIgnoreCase(Name);
-        if (!existedGenres.isEmpty() && genre.getName() != Name)
+        if (!existedGenres.isEmpty() && !genre.getName().equals(Name))
         {
             throw new RuntimeException("Tên thể loại đã được sử dụng");
         }
