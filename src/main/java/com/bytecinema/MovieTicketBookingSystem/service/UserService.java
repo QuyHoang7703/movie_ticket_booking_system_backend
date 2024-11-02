@@ -6,6 +6,7 @@ import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqChangePass
 
 import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.pagination.ResultPaginationDTO;
+import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,6 +25,7 @@ import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.Security;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -197,20 +199,24 @@ public class UserService {
     }
 
     public ResUserInfoDTO updateUserInfo(MultipartFile avatar, ReqUserInfoDTO requestUserInfoDTO) throws IdInValidException {
-        User user = this.userRepository.findById(requestUserInfoDTO.getId())
-                .orElseThrow(() -> new IdInValidException("Không tồn tại user với id: " + requestUserInfoDTO.getId()));
+        String email = SecurityUtil.getCurrentLogin().isPresent() ? SecurityUtil.getCurrentLogin().get() : null;
+        User currentUser = this.handleGetUserByEmail(email);
+        if(currentUser == null) {
+            throw new IdInValidException("User not found");
+        }
+
 //        user.setEmail(requestUserInfoDTO.getEmail());
-        user.setName(requestUserInfoDTO.getName());
-        user.setBirthDay(requestUserInfoDTO.getBirthDay());
-        user.setGender(requestUserInfoDTO.getGender());
-        user.setPhoneNumber(requestUserInfoDTO.getPhoneNumber());
+        currentUser.setName(requestUserInfoDTO.getName());
+        currentUser.setBirthDay(requestUserInfoDTO.getBirthDay());
+        currentUser.setGender(requestUserInfoDTO.getGender());
+        currentUser.setPhoneNumber(requestUserInfoDTO.getPhoneNumber());
         if(avatar!=null) {
             String urlAvatar = this.s3Service.uploadFile(avatar);
-            user.setAvatar(urlAvatar);
+            currentUser.setAvatar(urlAvatar);
         }
-        this.userRepository.save(user);
+        this.userRepository.save(currentUser);
 
-        return this.convertToResUserInfoDTO(user);
+        return this.convertToResUserInfoDTO(currentUser);
 
     }
 

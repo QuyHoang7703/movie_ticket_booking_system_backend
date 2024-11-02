@@ -47,8 +47,8 @@ public class GenreController {
         return ResponseEntity.status(HttpStatus.CREATED).body(genreDTO);
     }
     @GetMapping("/genres/{id}")
-public ResponseEntity<ResGenreDTO> getGenre(@PathVariable Long id) {
-    ResGenreDTO existedGenre = genresService.findGenreById(id);
+    public ResponseEntity<ResGenreDTO> getGenre(@PathVariable Long id) {
+         ResGenreDTO existedGenre = genresService.findGenreById(id);
     return ResponseEntity.ok(existedGenre);
 }
     @PreAuthorize("hasRole('ADMIN')")

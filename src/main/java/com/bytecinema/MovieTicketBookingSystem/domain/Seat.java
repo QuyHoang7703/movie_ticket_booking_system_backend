@@ -1,7 +1,9 @@
 package com.bytecinema.MovieTicketBookingSystem.domain;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -30,6 +32,9 @@ public class Seat {
     @JoinColumn(name="auditorium_id")
     private Auditorium auditorium;
 
-    @OneToMany(mappedBy = "seat")
-    private List<ReservedBooking> reservedBookings;
+    @ManyToMany(mappedBy = "seats", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Booking> bookings;
+
+
 }
