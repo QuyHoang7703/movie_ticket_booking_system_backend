@@ -1,4 +1,5 @@
 package com.bytecinema.MovieTicketBookingSystem.domain;
+import com.bytecinema.MovieTicketBookingSystem.util.constant.StatusPayment;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,6 +21,7 @@ public class Booking {
     private long id;
     private Instant timeBooking;
     private BigDecimal ticketPrice;
+    private String transactionCode;
 
     @ManyToOne
     @JoinColumn(name="user_id")
@@ -32,6 +34,9 @@ public class Booking {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name="booking_seats", joinColumns = @JoinColumn(name="booking_id"), inverseJoinColumns = @JoinColumn(name="seat_id"))
     private List<Seat> seats;
+
+    @Enumerated(EnumType.STRING)
+    private StatusPayment statusPayment;
 
     @PrePersist
     public void prePersist(){

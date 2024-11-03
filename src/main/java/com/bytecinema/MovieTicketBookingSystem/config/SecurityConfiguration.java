@@ -75,6 +75,7 @@ public class SecurityConfiguration {
                 .requestMatchers(HttpMethod.GET, "/api/v1/genres/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/movies/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/screening/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/vn-pay-callback/**").permitAll()
                 .anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwtConfigurer -> jwtConfigurer
