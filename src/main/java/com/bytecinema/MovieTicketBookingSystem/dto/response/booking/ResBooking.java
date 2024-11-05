@@ -34,5 +34,6 @@ public class ResBooking {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm dd-MM-yyy", timezone = "GMT+7")
     private Instant paidTime;
 
+    private String transactionCode;
 
 }

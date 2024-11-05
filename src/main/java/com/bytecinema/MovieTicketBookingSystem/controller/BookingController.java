@@ -50,8 +50,7 @@ public class BookingController {
         String transactionCode = request.getParameter("vnp_TxnRef");
         log.info("Mã giao dịch: " + transactionCode);
         if (status.equals("00")) {
-            this.bookingService.changeStatusBooking(request.getParameter("vnp_TxnRef"));
-//            this.bookingService.sendOrderViaEmail(transactionCode);
+            this.bookingService.sendOrderThroughEmail(request.getParameter("vnp_TxnRef"));
             return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Payment successful"));
         } else {
             this.bookingService.handlePaymentFailure(transactionCode);

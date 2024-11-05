@@ -70,7 +70,7 @@ public class TokenService {
         context.setVariable("userName", name);
         context.setVariable("resetPasswordLink", resetPasswordLink);
 
-        this.emailService.sendEmail2(email, subject, "reset_password_email", context);
+        this.emailService.sendEmail(email, subject, "reset_password_email", context);
 
     }
     

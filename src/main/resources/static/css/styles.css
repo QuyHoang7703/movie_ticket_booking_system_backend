@@ -1,10 +1,10 @@
-body {
-    font-family: 'Helvetica', 'Arial', sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f9f9f9;
-    color: #333;
-}
+/*body {*/
+/*    font-family: 'Helvetica', 'Arial', sans-serif;*/
+/*    margin: 0;*/
+/*    padding: 0;*/
+/*    background-color: #f9f9f9;*/
+/*    color: #333;*/
+/*}*/
 .email-container {
     max-width: 600px;
     margin: 30px auto;
@@ -17,36 +17,41 @@ body {
 .header {
     background-color: #092B4B;
     color: #ffffff;
-    text-align: center;
+    text-align: left;
     padding: 20px;
-    font-size: 24px;
-    font-weight: bold;
-    position: relative;
+    display: flex;
+    align-items: center;
 }
 .logo {
     max-width: 100px;
-    margin: 10px auto;
-    display: block;
+    margin-right: 20px;
 }
-.content {
-    padding: 20px 30px;
+.title {
+    font-size: 24px;
+    font-weight: bold;
+}
+.section {
+    padding: 20px;
     line-height: 1.6;
+    border-bottom: 1px solid #ddd; /* Đường ngăn cách giữa các phần */
+}
+.section:last-child {
+    border-bottom: none; /* Bỏ đường ngăn cách cho phần cuối cùng */
 }
 .details {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     font-size: 16px;
 }
 .details span {
     font-weight: bold;
+    min-width: 150px; /* Chiều rộng tối thiểu cho nhãn */
 }
-.seats {
-    margin-bottom: 15px;
-}
-.status {
-    color: #d9534f;
-    font-weight: bold;
+.details span.value {
+    flex: 1;
+    text-align: right; /* Căn phải cho giá trị */
+    margin-left: 10px; /* Khoảng cách giữa nhãn và giá trị */
 }
 .footer {
     background-color: #092B4B;
