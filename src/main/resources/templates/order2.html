@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác Nhận Đặt Vé</title>
+        <style th:text="${cssContent}"></style>
+</head>
+<body>
+<div class="email-container">
+    <div class="header">
+        <img src="https://movieticketbooking.s3.ap-southeast-2.amazonaws.com/byte_cinema.png" alt="Logo Rạp Phim" class="logo">
+        <div class="title">HÓA ĐƠN ĐẶT VÉ XEM PHIM</div>
+    </div>
+
+    <div class="section">
+        <h3>Thông Tin Người Đặt</h3>
+        <div class="details">
+            <span>Tên khách hàng:</span> <span class="value" th:text="${resBooking.getNameUser()}">Tên khách hàng</span>
+        </div>
+        <div class="details">
+            <span>Email:</span> <span class="value" th:text="${resBooking.getEmail()}">Email của khách hàng</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Thông Tin Phim</h3>
+        <div class="details">
+            <span>Mã thanh toán:</span> <span class="value" th:text="${resBooking.getTransactionCode()}">Mã thanh toán</span>
+        </div>
+        <div class="details">
+            <span>Phim:</span> <span class="value" th:text="${resBooking.getNameMovie()}">Tên phim</span>
+        </div>
+        <div class="details">
+            <span>Thời gian chiếu:</span> <span class="value" th:text="${#dates.format(resBooking.getStartTime(), 'HH:mm dd-MM-yyyy')}">Thời gian chiếu</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Thông Tin Đặt Vé</h3>
+        <div class="details">
+            <span>Thời gian đặt vé:</span> <span class="value" th:text="${#dates.format(resBooking.getBookingTime(), 'HH:mm dd-MM-yyyy')}">Thời gian đặt vé</span>
+        </div>
+        <div class="details">
+            <span>Phòng chiếu:</span> <span class="value" th:text="${resBooking.getNameAuditorium()}">Tên phòng chiếu</span>
+        </div>
+        <div class="details seats">
+            <span>Số ghế:</span> <span class="value" th:text="${nameSeats}">Tên phòng chiếu</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Thông Tin Thanh Toán</h3>
+        <div class="details">
+            <span>Tổng tiền:</span> <span class="value" th:text="${resBooking.getFormattedTotalPrice()}">Tổng tiền vé</span>
+        </div>
+        <div class="details">
+            <span>Thời gian thanh toán:</span> <span class="value" th:text="${#dates.format(resBooking.getPaidTime(), 'HH:mm dd-MM-yyyy')}">Thời gian thanh toán</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Cảm ơn bạn đã lựa chọn dịch vụ của chúng tôi!</p>
+    </div>
+</div>
+</body>
+</html>

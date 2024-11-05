@@ -59,6 +59,15 @@ public class BookingService {
 
         List<Long> idOfSeats = reqBooking.getSeats().stream().map(seat -> seat.getId())
                 .toList();
+        List<Long> idOfSeatsInAuditorium = screening.getAuditorium().getSeats().stream()
+                .map(seat -> seat.getId()).toList();
+
+        // Check id of seats belong id of Seats in auditorium
+        boolean check = idOfSeatsInAuditorium.containsAll(idOfSeats);
+        if(!check) {
+            throw new IdInValidException("Seats in Auditorium not found");
+        }
+
         List<Seat> seats = this.seatsRepository.findByIdIn(idOfSeats);
         List<Seat> orderedSeats = this.seatService.getOrderedSeats(reqBooking.getScreeningId());
         if(orderedSeats!=null && !orderedSeats.isEmpty()){
@@ -92,6 +101,9 @@ public class BookingService {
         resBooking.setNameAuditorium(booking.getScreening().getAuditorium().getName());
         resBooking.setStatusPayment(booking.getStatusPayment());
         resBooking.setPaidTime(booking.getPaymentTime());
+        if(booking.getTransactionCode() != null){
+            resBooking.setTransactionCode(booking.getTransactionCode());
+        }
         List<Seat> seats = booking.getSeats();
         List<String> nameSeats = seats.stream()
                 .map(seat -> seat.getSeatRow() + seat.getSeatNumber())
@@ -161,24 +173,21 @@ public class BookingService {
 
     }
 
-    public void changeStatusBooking(String transactionCode) throws IdInValidException, IOException {
+    public void sendOrderThroughEmail(String transactionCode) throws IdInValidException, IOException {
         Booking bookingDb = this.bookingRepository.findByTransactionCode(transactionCode)
                 .orElseThrow(() -> new IdInValidException("Booking not found"));
         bookingDb.setStatusPayment(StatusPayment.PAID);
         bookingDb.setPaymentExpiryTime(null);
         Booking updatedBooking = this.bookingRepository.save(bookingDb);
-
+        ResBooking resBooking = this.convertToResBooking(updatedBooking);
+        String nameSeats = String.join(", ", resBooking.getNameSeats());
         Context context = new Context();
         context.setVariable("cssContent", this.emailService.loadCssFromFile());
-        context.setVariable("booking", updatedBooking);
-        context.setVariable("transactionCode", transactionCode);
-        List<Seat> seats = updatedBooking.getSeats();
-        List<String> nameSeats = seats.stream()
-                .map(seat -> seat.getSeatRow() + seat.getSeatNumber())
-                .toList();
+        context.setVariable("resBooking", resBooking);
         context.setVariable("nameSeats", nameSeats);
-//        context.setVariable("formattedTicketPrice", booking.getFormattedTicketPrice());
-        this.emailService.sendEmail(updatedBooking.getUser().getEmail(), "Order ticket cinema", "order.html", context);
+
+        this.emailService.sendEmail(updatedBooking.getUser().getEmail(), "Order ticket cinema", "order2", context);
+        log.info("Sent order through email");
     }
 
     public void handlePaymentFailure(String transactionCode) throws IdInValidException {
@@ -199,22 +208,4 @@ public class BookingService {
         }
 
     }
-
-    public void sendOrderViaEmail(String transactionCode) throws IdInValidException, IOException {
-        Booking booking = this.bookingRepository.findByTransactionCode(transactionCode)
-                .orElseThrow(() -> new IdInValidException("Booking not found"));
-        Context context = new Context();
-        context.setVariable("cssContent", this.emailService.loadCssFromFile());
-        context.setVariable("booking", booking);
-        List<Seat> seats = booking.getSeats();
-        List<String> nameSeats = seats.stream()
-                .map(seat -> seat.getSeatRow() + seat.getSeatNumber())
-                .toList();
-        context.setVariable("nameSeats", nameSeats);
-//        context.setVariable("formattedTicketPrice", booking.getFormattedTicketPrice());
-        this.emailService.sendEmail(booking.getUser().getEmail(), "Order ticket cinema", "order.html", context);
-
-    }
-
-
 }

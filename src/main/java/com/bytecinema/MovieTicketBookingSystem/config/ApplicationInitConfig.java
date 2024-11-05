@@ -5,6 +5,7 @@ import com.bytecinema.MovieTicketBookingSystem.domain.User;
 import com.bytecinema.MovieTicketBookingSystem.repository.RoleRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
+@Slf4j
 public class ApplicationInitConfig {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
@@ -35,6 +37,17 @@ public class ApplicationInitConfig {
                 Role userRole = new Role();
                 userRole.setName("USER");
                 this.roleRepository.save(userRole);
+            }
+
+            if(userRepository.findAll().isEmpty()) {
+                User user = new User();
+                user.setEmail("admin@gmail.com");
+                user.setPassword(passwordEncoder.encode("admin_cnpm"));
+                user.setName("I AM ADMIN");
+                Role role = this.roleRepository.findByName("ADMIN").get();
+                user.setRole(role);
+                this.userRepository.save(user);
+                log.info("Finish initial database");
             }
 
         };
