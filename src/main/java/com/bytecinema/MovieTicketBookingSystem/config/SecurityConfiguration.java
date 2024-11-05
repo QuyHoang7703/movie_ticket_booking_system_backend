@@ -46,25 +46,7 @@ public class SecurityConfiguration {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    // @Bean
-    // public SecurityFilterChain filterChain(HttpSecurity http, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
-    //     http
-    //             .csrf(c->c.disable())
-    //             .cors(Customizer.withDefaults())
-    //             .authorizeHttpRequests(
-    //                     authz -> authz
-    //                             // .requestMatchers("/", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/register", "/api/v1/roles", "/api/v1/auth/verify", "/api/v1/auth/resend").permitAll()
-    //                             .requestMatchers("/", "/api/v1/auth/**").permitAll()
-    //                             .anyRequest().authenticated())
 
-    //             .oauth2ResourceServer((oauth2) -> oauth2.jwt(Customizer.withDefaults())
-                
-    //                 .authenticationEntryPoint(customAuthenticationEntryPoint))
-    //             .formLogin(f -> f.disable())
-    //             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-    //     return http.build();
-    // }
    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
     http

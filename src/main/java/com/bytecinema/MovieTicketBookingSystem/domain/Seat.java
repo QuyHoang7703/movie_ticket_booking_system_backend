@@ -18,19 +18,20 @@ public class Seat {
     private long id;
     private int seatNumber;
     private String seatRow;
-    private boolean available;
+//    private boolean available;
 
     @ManyToOne
     @JoinColumn(name="auditorium_id")
+    @JsonIgnore
     private Auditorium auditorium;
 
     @ManyToMany(mappedBy = "seats", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Booking> bookings;
 
-    @PrePersist
-    public void prePersist(){
-        this.available = true;
-    }
+//    @PrePersist
+//    public void prePersist(){
+//        this.available = true;
+//    }
 
 }

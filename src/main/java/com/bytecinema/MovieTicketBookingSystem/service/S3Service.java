@@ -1,8 +1,11 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class S3Service {
     @Value("${bucketName}")
     private String bucketName;
@@ -23,7 +27,6 @@ public class S3Service {
 
     private final AmazonS3 amazonS3;
 
-    
 
 
     public String getImageUrl(String imagePath) {
@@ -57,6 +60,23 @@ public class S3Service {
             return getImageUrl(filePath);
         } catch (IOException e) {
             throw new RuntimeException("Failed to upload file to S3: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteFile(String filePath) {
+        String [] parts = filePath.split("/");
+        String keyFromUrl = parts[parts.length - 1];
+        try {
+            amazonS3.deleteObject(bucketName, keyFromUrl);
+            log.info("Deleted file: " + parts[parts.length - 1]);
+        }catch (AmazonS3Exception e) {
+            throw new RuntimeException("Failed to delete file from S3: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteFiles(List<String> filePaths) {
+        for(String filePath : filePaths) {
+            deleteFile(filePath);
         }
     }
 

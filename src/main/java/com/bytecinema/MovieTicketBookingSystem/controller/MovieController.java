@@ -111,21 +111,21 @@ public ResponseEntity<ResMovieDTO> getMovieById(@PathVariable Long id) {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/movies/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<?> updateMovie(
+    public ResponseEntity<?> updateMovie(
         @PathVariable Long id,
         @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles,
         @Valid @RequestPart("movie-info") ReqAddMovieDTO updateMovieDTO) {
 
-    // Danh sách để lưu trữ đường dẫn hình ảnh đã tải lên
-    List<String> pathImages = new ArrayList<>();
+        // Danh sách để lưu trữ đường dẫn hình ảnh đã tải lên
+        List<String> pathImages = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
         // Kiểm tra định dạng file
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile imageFile : imageFiles) {
                 String contentType = imageFile.getContentType();
-                if (contentType == null || 
-                    !(contentType.equals(MediaType.IMAGE_JPEG_VALUE) || 
+                if (contentType == null ||
+                    !(contentType.equals(MediaType.IMAGE_JPEG_VALUE) ||
                       contentType.equals(MediaType.IMAGE_PNG_VALUE) || contentType.equals("image/jpg"))) {
 
                     errors.add("File " + imageFile.getOriginalFilename() + " phải có định dạng jpg, jpeg, hoặc png.");

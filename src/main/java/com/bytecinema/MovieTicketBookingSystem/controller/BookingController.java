@@ -9,11 +9,14 @@ import com.bytecinema.MovieTicketBookingSystem.service.BookingService;
 import com.bytecinema.MovieTicketBookingSystem.service.SeatService;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("api/v1")
@@ -26,7 +29,8 @@ public class BookingController {
     @PostMapping("/bookings")
     public ResponseEntity<ResBooking> createBooking(@RequestBody ReqBooking reqBooking) throws IdInValidException {
         Booking booking = bookingService.createBooking(reqBooking);
-        return ResponseEntity.status(HttpStatus.CREATED).body(this.bookingService.convertToResBooking(booking));
+        ResBooking resBooking = this.bookingService.convertToResBooking(booking);
+        return ResponseEntity.status(HttpStatus.CREATED).body(resBooking);
     }
 
     @GetMapping("/bookings")
@@ -40,12 +44,14 @@ public class BookingController {
     }
 
     @GetMapping("/vn-pay-callback")
-    public ResponseEntity<ResponseInfo<String>> payCallbackHandler(HttpServletRequest request) throws IdInValidException {
+    @Transactional
+    public ResponseEntity<ResponseInfo<String>> payCallbackHandler(HttpServletRequest request) throws IdInValidException, IOException {
         String status = request.getParameter("vnp_ResponseCode");
         String transactionCode = request.getParameter("vnp_TxnRef");
         log.info("Mã giao dịch: " + transactionCode);
         if (status.equals("00")) {
             this.bookingService.changeStatusBooking(request.getParameter("vnp_TxnRef"));
+//            this.bookingService.sendOrderViaEmail(transactionCode);
             return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Payment successful"));
         } else {
             this.bookingService.handlePaymentFailure(transactionCode);

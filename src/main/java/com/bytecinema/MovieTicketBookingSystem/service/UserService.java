@@ -136,12 +136,9 @@ public class UserService {
         userInfo.setAvatar(user.getAvatar());
         userInfo.setRole(user.getRole().getName());
 
-
         resUserInfoDTO.setUserInfo(userInfo);
         return resUserInfoDTO;
     }
-
-   
 
     public User handleUpdateUser(User reqUser) {
         long id = reqUser.getId();
@@ -157,7 +154,6 @@ public class UserService {
             return this.userRepository.save(user);
         }
         return null;
-
 
     }
 
@@ -210,6 +206,9 @@ public class UserService {
         currentUser.setBirthDay(requestUserInfoDTO.getBirthDay());
         currentUser.setGender(requestUserInfoDTO.getGender());
         currentUser.setPhoneNumber(requestUserInfoDTO.getPhoneNumber());
+        if(currentUser.getAvatar() != null) {
+            this.s3Service.deleteFile(currentUser.getAvatar());
+        }
         if(avatar!=null) {
             String urlAvatar = this.s3Service.uploadFile(avatar);
             currentUser.setAvatar(urlAvatar);
@@ -219,9 +218,5 @@ public class UserService {
         return this.convertToResUserInfoDTO(currentUser);
 
     }
-
-   
-
-    
 
 }

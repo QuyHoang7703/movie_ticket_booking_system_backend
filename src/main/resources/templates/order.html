@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác Nhận OTP</title>
+<!--    <style th:text="${cssContent}"></style>-->
+    <style>
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #092B4B;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            position: relative;
+        }
+        .logo {
+            max-width: 100px;
+            margin: 10px auto;
+            display: block;
+        }
+        .content {
+            padding: 20px 30px;
+            line-height: 1.6;
+        }
+        .details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .details span {
+            font-weight: bold;
+        }
+        .seats {
+            margin-bottom: 15px;
+        }
+        .status {
+            color: #d9534f;
+            font-weight: bold;
+        }
+        .footer {
+            background-color: #092B4B;
+            color: #ffffff;
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 0;
+        }
+    </style>
+
+</head>
+<body>
+<div class="email-container">
+    <div class="header">
+        <img src="https://movieticketbooking.s3.ap-southeast-2.amazonaws.com/byte_cinema.png" alt="Logo Rạp Phim" class="logo">
+        HÓA ĐƠN ĐẶT VÉ XEM PHIM
+    </div>
+    <div class="content">
+        <div class="details">
+            <span>Tên khách hàng:</span> <span>th:text="${booking.name}"</span>
+        </div>
+        <div class="details">
+            <span>Email:</span> <span>th:text="${booking.email}"</span>
+        </div>
+        <div class="details">
+            <span>Mã thanh toán:</span> <span>th:text="${booking.transactionCode}"</span>
+        </div>
+        <div class="details">
+            <span>Mã thanh toán 2:</span> <span>th:text="${transactionCode}"</span>
+        </div>
+        <div class="details">
+            <span>Phim:</span> <span>th:text="${booking.screening.movie.name}"</span>
+        </div>
+        <div class="details">
+            <span>Thời gian chiếu:</span> <span>th:text="${booking.screening.startTime}"</span>
+        </div>
+        <div class="details">
+            <span>Thời gian đặt vé:</span> <span>th:text="${booking.timeBooking}"</span>
+        </div>
+        <div class="details">
+            <span>Phòng chiếu:</span> <span>th:text="${booking.screening.auditorium.name}"</span>
+        </div>
+        <div class="details seats">
+            <span>Ghế:</span>
+            <span th:each="seat : ${nameSeats}" th:text="${seat}"></span>
+        </div>
+        <div class="details">
+            <span>Tổng tiền:</span> <span>th:text="${booking.formattedTicketPrice}"</span>
+        </div>
+<!--        <div class="details">-->
+<!--            <span>Trạng thái thanh toán:</span> <span class="status">th:text="${userName}"</span>-->
+<!--        </div>-->
+
+        <div class="details">
+            <span>Thời gian thanh toán:</span> <span>th:text="${booking.paymentTime}"</span>
+        </div>
+
+    </div>
+    <div class="footer">
+        <p>Cảm ơn bạn đã lựa chọn dịch vụ của chúng tôi!</p>
+    </div>
+</div>
+</body>
+</html>

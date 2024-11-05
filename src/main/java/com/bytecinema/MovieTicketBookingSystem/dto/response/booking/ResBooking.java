@@ -2,12 +2,14 @@ package com.bytecinema.MovieTicketBookingSystem.dto.response.booking;
 
 import com.bytecinema.MovieTicketBookingSystem.util.constant.StatusPayment;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResBooking {
     private String email;
     private String nameUser;
@@ -27,5 +29,10 @@ public class ResBooking {
 //    private BigDecimal totalPrice;
     private String formattedTotalPrice;
 
-    private StatusPayment statusPayment = StatusPayment.PENDING_PAYMENT;
+    private StatusPayment statusPayment;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm dd-MM-yyy", timezone = "GMT+7")
+    private Instant paidTime;
+
+
 }

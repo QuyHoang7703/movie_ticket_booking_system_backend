@@ -18,11 +18,15 @@ import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -37,6 +41,7 @@ public class BookingService {
     private final SeatsRepository seatsRepository;
     private final VnPayConfig vnPayConfig;
     private final SeatService seatService;
+    private final EmailService emailService;
 
     public Booking createBooking(ReqBooking reqBooking) throws IdInValidException {
         Booking booking = new Booking();
@@ -55,10 +60,17 @@ public class BookingService {
         List<Long> idOfSeats = reqBooking.getSeats().stream().map(seat -> seat.getId())
                 .toList();
         List<Seat> seats = this.seatsRepository.findByIdIn(idOfSeats);
-        booking.setSeats(seats);
-        for (Seat seat : seats) {
-            this.seatService.updateStatusSeat(seat.getId(), false);
+        List<Seat> orderedSeats = this.seatService.getOrderedSeats(reqBooking.getScreeningId());
+        if(orderedSeats!=null && !orderedSeats.isEmpty()){
+            for(Seat seat : seats){
+                for(Seat orderedSeat : orderedSeats){
+                    if(seat.getId() == orderedSeat.getId()){
+                        throw new RuntimeException("Seat " + seat.getSeatRow() + seat.getSeatNumber() + " already ordered");
+                    }
+                }
+            }
         }
+        booking.setSeats(seats);
 
         BigDecimal pricePerSeat = booking.getScreening().getTicketPrice();
         BigDecimal totalPrice = pricePerSeat.multiply(BigDecimal.valueOf(seats.size()));
@@ -78,14 +90,15 @@ public class BookingService {
         resBooking.setStartTime(booking.getScreening().getStartTime());
         resBooking.setBookingTime(booking.getTimeBooking());
         resBooking.setNameAuditorium(booking.getScreening().getAuditorium().getName());
+        resBooking.setStatusPayment(booking.getStatusPayment());
+        resBooking.setPaidTime(booking.getPaymentTime());
         List<Seat> seats = booking.getSeats();
         List<String> nameSeats = seats.stream()
                 .map(seat -> seat.getSeatRow() + seat.getSeatNumber())
                 .toList();
         resBooking.setNameSeats(nameSeats);
-//        BigDecimal pricePerSeat = booking.getScreening().getTicketPrice();
-//        BigDecimal totalPrice = pricePerSeat.multiply(BigDecimal.valueOf(seats.size()));
         resBooking.setFormattedTotalPrice(this.formatCurrency(booking.getTicketPrice()));
+
         return resBooking;
     }
 
@@ -114,7 +127,10 @@ public class BookingService {
     public ResVnPayDTO createVnPayPayment(HttpServletRequest request) throws IdInValidException {
         Booking booking = this.bookingRepository.findById(Long.valueOf((request.getParameter("bookingId"))))
                 .orElseThrow(() -> new IdInValidException("Booking not found"));
-
+        if(Instant.now().isAfter(booking.getPaymentExpiryTime())){
+            this.bookingRepository.delete(booking);
+            throw new RuntimeException("Payment time is over !!!");
+        }
 //        long amount = Integer.parseInt(String.valueOf(10000)) * 100L;
         BigDecimal ticketPrice = booking.getTicketPrice();
         BigDecimal roundedPrice = ticketPrice.setScale(0, RoundingMode.DOWN);
@@ -145,20 +161,59 @@ public class BookingService {
 
     }
 
-    public void changeStatusBooking(String transactionCode) throws IdInValidException {
+    public void changeStatusBooking(String transactionCode) throws IdInValidException, IOException {
         Booking bookingDb = this.bookingRepository.findByTransactionCode(transactionCode)
                 .orElseThrow(() -> new IdInValidException("Booking not found"));
         bookingDb.setStatusPayment(StatusPayment.PAID);
-        this.bookingRepository.save(bookingDb);
+        bookingDb.setPaymentExpiryTime(null);
+        Booking updatedBooking = this.bookingRepository.save(bookingDb);
+
+        Context context = new Context();
+        context.setVariable("cssContent", this.emailService.loadCssFromFile());
+        context.setVariable("booking", updatedBooking);
+        context.setVariable("transactionCode", transactionCode);
+        List<Seat> seats = updatedBooking.getSeats();
+        List<String> nameSeats = seats.stream()
+                .map(seat -> seat.getSeatRow() + seat.getSeatNumber())
+                .toList();
+        context.setVariable("nameSeats", nameSeats);
+//        context.setVariable("formattedTicketPrice", booking.getFormattedTicketPrice());
+        this.emailService.sendEmail(updatedBooking.getUser().getEmail(), "Order ticket cinema", "order.html", context);
     }
 
     public void handlePaymentFailure(String transactionCode) throws IdInValidException {
         Booking booking = this.bookingRepository.findByTransactionCode(transactionCode)
                 .orElseThrow(() -> new IdInValidException("Booking not found"));
-        List<Seat> seats = booking.getSeats();
-        for (Seat seat : seats) {
-            this.seatService.updateStatusSeat(seat.getId(), true);
+        this.bookingRepository.delete(booking);
+        log.info("Deleted booking with id : " + booking.getId());
+    }
+
+    @Scheduled(cron = "0 */1 * * * *")
+    public void deleteExpiredBooking() throws IdInValidException {
+        List<Booking> bookingList = this.bookingRepository.findByStatusPayment(StatusPayment.PENDING_PAYMENT);
+        for(Booking booking : bookingList){
+            if(Instant.now().isAfter(booking.getPaymentExpiryTime())){
+                log.info("Deleted expired booking: " + booking.getId());
+                this.bookingRepository.delete(booking);
+            }
         }
+
+    }
+
+    public void sendOrderViaEmail(String transactionCode) throws IdInValidException, IOException {
+        Booking booking = this.bookingRepository.findByTransactionCode(transactionCode)
+                .orElseThrow(() -> new IdInValidException("Booking not found"));
+        Context context = new Context();
+        context.setVariable("cssContent", this.emailService.loadCssFromFile());
+        context.setVariable("booking", booking);
+        List<Seat> seats = booking.getSeats();
+        List<String> nameSeats = seats.stream()
+                .map(seat -> seat.getSeatRow() + seat.getSeatNumber())
+                .toList();
+        context.setVariable("nameSeats", nameSeats);
+//        context.setVariable("formattedTicketPrice", booking.getFormattedTicketPrice());
+        this.emailService.sendEmail(booking.getUser().getEmail(), "Order ticket cinema", "order.html", context);
+
     }
 
 

@@ -142,9 +142,6 @@ public class AuthController {
                                                 .avatar(user.getAvatar())
                                                 .role(user.getRole().getName())
                                                 .build();
-
-
-
             res.setUserLogin(userLogin);
         }
 
