@@ -4,9 +4,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -54,5 +56,19 @@ public class ScreeningController {
     {
         List<ResScreeningDTO> res = screeningService.getScreeningDTOByDay(date);
         return ResponseEntity.ok(res);
+    }
+
+    @PutMapping("/update-screening/{id}")
+    public ResponseEntity<ResScreeningDTO> updateScreening(@PathVariable Long id, @Valid @RequestBody ReqAddScreeningDTO request)
+    {
+        ResScreeningDTO res = screeningService.updateScreening(id, request);
+        return ResponseEntity.ok(res);
+    }
+    
+    @DeleteMapping("/delete-screening/{id}")
+    public ResponseEntity<Void> deleteScreening(@PathVariable Long id)
+    {
+        screeningService.deleteScreening(id);
+        return ResponseEntity.noContent().build();
     }
 }
