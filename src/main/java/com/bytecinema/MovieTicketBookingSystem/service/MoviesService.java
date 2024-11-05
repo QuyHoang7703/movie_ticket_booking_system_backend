@@ -28,6 +28,7 @@ public class MoviesService {
     private final ImagesRepository imagesRepository;
     private final MovieGenresRepository movieGenresRepository;
     private final GenreRepository genreRepository;
+    private final S3Service s3Service;
 
     @Transactional
     public ResMovieDTO addMovie(ReqAddMovieDTO addMovieDTO)
@@ -104,6 +105,12 @@ public ResMovieDTO updateMovie(Long id, ReqAddMovieDTO updateMovieDTO) {
     // Kiểm tra sự tồn tại của phim
     Movie movie = movieRepository.findById(id)
         .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
+    // Xóa image cũ rồi mới update
+    List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
+            .toList();
+    if(urlImages != null && !urlImages.isEmpty()){
+        this.s3Service.deleteFiles(urlImages);
+    }
 
     List<Movie> existedMovies = movieRepository.findByNameIgnoreCase(updateMovieDTO.getName());
     if (!existedMovies.isEmpty() && !movie.getName().equals(updateMovieDTO.getName()))
