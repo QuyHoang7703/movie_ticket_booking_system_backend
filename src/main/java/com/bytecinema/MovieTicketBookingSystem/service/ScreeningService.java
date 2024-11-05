@@ -69,6 +69,75 @@ public class ScreeningService {
         return result;
     }
 
+    public ResScreeningDTO updateScreening(Long id, ReqAddScreeningDTO request)
+    {
+        Screening screening = screeningsRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Screening not found with id" + id));
+
+        if (request.getStartTime().isBefore(Instant.now()))
+        {
+            throw new RuntimeException("Start time must be in the future");
+        }
+
+        Movie movie = movieRepository.findById(request.getMovieId())
+            .orElseThrow(() -> new RuntimeException("Movie not found"));
+
+        Auditorium auditorium = auditoriumsRepository.findById(request.getAuditoriumId())
+            .orElseThrow(() -> new RuntimeException("Auditorium not found"));
+        
+        Instant endTime = request.getStartTime().plus(Duration.ofMinutes(request.getAdsDuration())).plus(movie.getDuration());
+
+        boolean isOverLapping = screeningsRepository.existsByAuditoriumAndEndTimeGreaterThanAndStartTimeLessThan(auditorium, request.getStartTime(), endTime);
+
+        boolean isScreeningHaveBooked = screening.getBookings().size() > 0;
+
+        if (isScreeningHaveBooked)
+        {
+            throw new RuntimeException("Screening have booked, cannot be updated.");
+        }
+    
+        if (isOverLapping)
+        {
+            throw new RuntimeException("There is already screening is this auditorium during the specified time.");
+        }
+    
+        screening.setStartTime(request.getStartTime());
+        screening.setTicketPrice(request.getTicketPrice());
+        screening.setMovie(movie);
+        screening.setAuditorium(auditorium);
+        screening.setEndTime(endTime);
+    
+        screeningsRepository.save(screening);
+    
+    
+        ResScreeningDTO result = new ResScreeningDTO();
+        result.setId(screening.getId());
+        result.setStartTime(screening.getStartTime());
+        result.setEndTime(screening.getEndTime());
+        result.setMovieName(movie.getName());
+        result.setAuditoriumName(auditorium.getName());
+        result.setMovieId(movie.getId());
+        result.setAuditoriumId(auditorium.getId());
+        result.setTicketPrice(request.getTicketPrice());
+    
+        return result;        
+    }
+
+    public void deleteScreening(Long id)
+    {
+        Screening screening = screeningsRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Screening not found with id" + id));
+
+        boolean isScreeningHaveBooked = screening.getBookings().size() > 0;
+
+        if (isScreeningHaveBooked)
+        {
+            throw new RuntimeException("Screening have booked, cannot be deleted.");
+        }
+
+        screeningsRepository.delete(screening);
+    }
+
 
     public List<ResScreeningDTO> getAllScreen()
     {
