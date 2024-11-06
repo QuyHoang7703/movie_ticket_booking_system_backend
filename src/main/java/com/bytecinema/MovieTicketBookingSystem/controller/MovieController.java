@@ -5,6 +5,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -141,11 +142,19 @@ public ResponseEntity<ResMovieDTO> getMovieById(@PathVariable Long id) {
         if (!errors.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
         }
-    updateMovieDTO.setImagePaths(pathImages);
-    // Gọi service để cập nhật phim
-    ResMovieDTO updatedMovie = moviesService.updateMovie(id, updateMovieDTO);
+        updateMovieDTO.setImagePaths(pathImages);
+        // Gọi service để cập nhật phim
+        ResMovieDTO updatedMovie = moviesService.updateMovie(id, updateMovieDTO);
 
-    // Trả về kết quả
-    return ResponseEntity.ok(updatedMovie);
-}
+        // Trả về kết quả
+        return ResponseEntity.ok(updatedMovie);
+    }
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/delete-movies/{id}")
+    public ResponseEntity<Void> deleteMovie(@PathVariable Long id)
+    {
+        moviesService.deleteMovie(id);
+        return ResponseEntity.noContent().build();
+    }
 }
