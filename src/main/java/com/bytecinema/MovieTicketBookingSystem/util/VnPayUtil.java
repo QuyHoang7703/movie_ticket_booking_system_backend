@@ -1,6 +1,7 @@
 package com.bytecinema.MovieTicketBookingSystem.util;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -9,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
-
+@Slf4j
 public class VnPayUtil {
     public static String hmacSHA512(final String key, final String data) {
         try {
@@ -34,16 +35,32 @@ public class VnPayUtil {
     }
 
     public static String getIpAddress(HttpServletRequest request) {
-        String ipAdress;
+//        String ipAdress;
+//        try {
+//            ipAdress = request.getHeader("X-FORWARDED-FOR");
+//            log.info("IP ADRRESS: ", ipAdress);
+//            if (ipAdress == null) {
+//                ipAdress = request.getRemoteAddr();
+//            }
+//        } catch (Exception e) {
+//            ipAdress = "Invalid IP:" + e.getMessage();
+//        }
+//        return ipAdress;
+        String ipAddress;
         try {
-            ipAdress = request.getHeader("X-FORWARDED-FOR");
-            if (ipAdress == null) {
-                ipAdress = request.getRemoteAddr();
+            ipAddress = request.getHeader("X-Forwarded-For");
+            if (ipAddress != null && !ipAddress.isEmpty()) {
+                // Nếu header X-Forwarded-For chứa nhiều IP, lấy IP đầu tiên
+                ipAddress = ipAddress.split(",")[0].trim();
+            } else {
+                // Nếu không có X-Forwarded-For, lấy IP từ request trực tiếp
+                ipAddress = request.getRemoteAddr();
             }
+
         } catch (Exception e) {
-            ipAdress = "Invalid IP:" + e.getMessage();
+            ipAddress = "Invalid IP: " + e.getMessage();
         }
-        return ipAdress;
+        return ipAddress;
     }
 
     public static String getRandomNumber(int len) {
