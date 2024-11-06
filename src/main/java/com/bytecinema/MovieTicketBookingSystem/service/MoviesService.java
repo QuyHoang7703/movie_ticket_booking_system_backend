@@ -184,6 +184,11 @@ public class MoviesService {
             throw new RuntimeException("Cannot delete movie that has been screened");
         }
 
+        List<MovieGenre> movieGenres = movie.getMovieGenres();
+        if (movieGenres != null && !movieGenres.isEmpty()) {
+            movieGenresRepository.deleteAll(movieGenres);
+        }
+
         // Xóa image
         List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
                 .toList();

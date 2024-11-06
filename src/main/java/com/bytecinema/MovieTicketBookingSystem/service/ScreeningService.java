@@ -144,10 +144,11 @@ public class ScreeningService {
             dto.setMovieId(screening.getMovie().getId());
             dto.setMovieName(screening.getMovie().getName());
             dto.setAuditoriumId(screening.getAuditorium().getId());
-            dto.setAuditoriumName(screening.getAuditorium().getName());
-            // dto.getBookings().addAll(screening.getBookings().stream()
-            // .map(booking ->
-            // bookingService.convertToResBooking(booking)).collect(Collectors.toList()));
+            var seat = screening.getBookings().stream()
+                    .map(booking -> bookingService.convertToResBooking(booking)).collect(Collectors.toList());
+       
+            dto.setBookings(seat);
+ 
             return dto;
         }).collect(Collectors.toList());
 
@@ -166,8 +167,10 @@ public class ScreeningService {
         dto.setMovieName(screening.getMovie().getName());
         dto.setAuditoriumId(screening.getAuditorium().getId());
         dto.setAuditoriumName(screening.getAuditorium().getName());
-        dto.getBookings().addAll(screening.getBookings().stream()
-                .map(booking -> bookingService.convertToResBooking(booking)).collect(Collectors.toList()));
+        var seat = screening.getBookings().stream()
+                    .map(booking -> bookingService.convertToResBooking(booking)).collect(Collectors.toList());
+       
+        dto.setBookings(seat);
 
         return dto;
     }
