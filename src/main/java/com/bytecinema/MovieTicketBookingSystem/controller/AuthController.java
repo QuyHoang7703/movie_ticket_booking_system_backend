@@ -237,13 +237,10 @@ public class AuthController {
        
         return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Yêu cầu của bạn đã được gửi tới email"));
     }
-
     
     @GetMapping("/auth/verify-token")
     @ApiMessage("Send request restore password")
     public ResponseEntity<ResponseInfo<Boolean>> checkValidToken(@RequestParam("token") String token) {
-        
-       
         return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>(this.tokenService.isValidToken(token)));
     }
 

@@ -25,13 +25,12 @@ public class TokenService {
         if(optionalAccount.isPresent()) {
             User user = optionalAccount.get();
             if((user.isVerified())==false) {
-                throw new IdInValidException("Tài khoản này đã bị kháo");
+                throw new IdInValidException("Tài khoản này đã bị khóa");
             }
 
             String token = UUID.randomUUID().toString();
             user.setToken(token);
             user.setExpirationTime(Instant.now().plus(3, ChronoUnit.MINUTES));
-
 
             this.userRepository.save(user);
             this.sendRequestForgotPassword(email, user.getName(), token);
@@ -60,7 +59,6 @@ public class TokenService {
 
     public void sendRequestForgotPassword(String email, String name, String token) {
         String subject = "Yêu cầu đặt lại mật khẩu";
-
 
         // Tạo liên kết chứa token để người dùng nhấn vào => chuyển đến fe xử lý
         String resetPasswordLink = "http://localhost:3000/reset-password?token=" + token;

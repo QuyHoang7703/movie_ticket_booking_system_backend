@@ -197,7 +197,7 @@ public class BookingService {
         log.info("Deleted booking with id : " + booking.getId());
     }
 
-    @Scheduled(cron = "0 */1 * * * *")
+    @Scheduled(cron = "0 */5 * * * *")
     public void deleteExpiredBooking() throws IdInValidException {
         List<Booking> bookingList = this.bookingRepository.findByStatusPayment(StatusPayment.PENDING_PAYMENT);
         for(Booking booking : bookingList){

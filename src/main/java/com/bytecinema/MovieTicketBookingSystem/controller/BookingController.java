@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,13 +52,26 @@ public class BookingController {
         log.info("Mã giao dịch: " + transactionCode);
         if (status.equals("00")) {
             this.bookingService.sendOrderThroughEmail(request.getParameter("vnp_TxnRef"));
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Payment successful"));
+//            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Payment successful"));
+            log.info("PAYMENT SUCCESSFULLY");
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header(HttpHeaders.LOCATION, "http://localhost:3000/payment-success?transactionId=" + transactionCode)
+                    .build();
+
         } else {
             this.bookingService.handlePaymentFailure(transactionCode);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseInfo<>("Payment unsuccessful"));
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseInfo<>("Payment unsuccessful"));
+            log.info("PAYMENT UNSUCCESSFULLY");
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header(HttpHeaders.LOCATION, "http://localhost:3000/payment-failure?transactionId=" + transactionCode)
+                    .build();
         }
     }
 
+//    @GetMapping("/payment-success")
+//    public ResponseEntity<String> paymentSuccess(@RequestParam String transactionId) {
+//        return ResponseEntity.ok("Payment Successful! Transaction ID: " + transactionId);
+//    }
 
 
 }
