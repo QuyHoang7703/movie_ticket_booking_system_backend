@@ -24,25 +24,25 @@ public class ScreeningService {
     private final ScreeningsRepository screeningsRepository;
     private final MovieRepository movieRepository;
     private final AuditoriumsRepository auditoriumsRepository;
+    private final BookingService bookingService;
 
-    public ResScreeningDTO addScreening(ReqAddScreeningDTO request)
-    {
-        if (request.getStartTime().isBefore(Instant.now()))
-        {
+    public ResScreeningDTO addScreening(ReqAddScreeningDTO request) {
+        if (request.getStartTime().isBefore(Instant.now())) {
             throw new RuntimeException("Start time must be in the future");
         }
         Movie movie = movieRepository.findById(request.getMovieId())
-            .orElseThrow(() -> new RuntimeException("Movie not found"));
+                .orElseThrow(() -> new RuntimeException("Movie not found"));
 
         Auditorium auditorium = auditoriumsRepository.findById(request.getAuditoriumId())
-            .orElseThrow(() -> new RuntimeException("Auditorium not found"));
+                .orElseThrow(() -> new RuntimeException("Auditorium not found"));
 
-        Instant endTime = request.getStartTime().plus(Duration.ofMinutes(request.getAdsDuration())).plus(movie.getDuration());
+        Instant endTime = request.getStartTime().plus(Duration.ofMinutes(request.getAdsDuration()))
+                .plus(movie.getDuration());
 
-        boolean isOverLapping = screeningsRepository.existsByAuditoriumAndEndTimeGreaterThanAndStartTimeLessThan(auditorium, request.getStartTime(), endTime);
+        boolean isOverLapping = screeningsRepository.existsByAuditoriumAndEndTimeGreaterThanAndStartTimeLessThan(
+                auditorium, request.getStartTime(), endTime);
 
-        if (isOverLapping)
-        {
+        if (isOverLapping) {
             throw new RuntimeException("There is already screening is this auditorium during the specified time.");
         }
 
@@ -54,7 +54,6 @@ public class ScreeningService {
         screening.setEndTime(endTime);
 
         screeningsRepository.save(screening);
-
 
         ResScreeningDTO result = new ResScreeningDTO();
         result.setId(screening.getId());
@@ -69,47 +68,44 @@ public class ScreeningService {
         return result;
     }
 
-    public ResScreeningDTO updateScreening(Long id, ReqAddScreeningDTO request)
-    {
+    public ResScreeningDTO updateScreening(Long id, ReqAddScreeningDTO request) {
         Screening screening = screeningsRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Screening not found with id" + id));
+                .orElseThrow(() -> new RuntimeException("Screening not found with id" + id));
 
-        if (request.getStartTime().isBefore(Instant.now()))
-        {
+        if (request.getStartTime().isBefore(Instant.now())) {
             throw new RuntimeException("Start time must be in the future");
         }
 
         Movie movie = movieRepository.findById(request.getMovieId())
-            .orElseThrow(() -> new RuntimeException("Movie not found"));
+                .orElseThrow(() -> new RuntimeException("Movie not found"));
 
         Auditorium auditorium = auditoriumsRepository.findById(request.getAuditoriumId())
-            .orElseThrow(() -> new RuntimeException("Auditorium not found"));
-        
-        Instant endTime = request.getStartTime().plus(Duration.ofMinutes(request.getAdsDuration())).plus(movie.getDuration());
+                .orElseThrow(() -> new RuntimeException("Auditorium not found"));
 
-        boolean isOverLapping = screeningsRepository.existsByAuditoriumAndEndTimeGreaterThanAndStartTimeLessThan(auditorium, request.getStartTime(), endTime);
+        Instant endTime = request.getStartTime().plus(Duration.ofMinutes(request.getAdsDuration()))
+                .plus(movie.getDuration());
+
+        boolean isOverLapping = screeningsRepository.existsByAuditoriumAndEndTimeGreaterThanAndStartTimeLessThan(
+                auditorium, request.getStartTime(), endTime);
 
         boolean isScreeningHaveBooked = screening.getBookings().size() > 0;
 
-        if (isScreeningHaveBooked)
-        {
+        if (isScreeningHaveBooked) {
             throw new RuntimeException("Screening have booked, cannot be updated.");
         }
-    
-        if (isOverLapping)
-        {
+
+        if (isOverLapping) {
             throw new RuntimeException("There is already screening is this auditorium during the specified time.");
         }
-    
+
         screening.setStartTime(request.getStartTime());
         screening.setTicketPrice(request.getTicketPrice());
         screening.setMovie(movie);
         screening.setAuditorium(auditorium);
         screening.setEndTime(endTime);
-    
+
         screeningsRepository.save(screening);
-    
-    
+
         ResScreeningDTO result = new ResScreeningDTO();
         result.setId(screening.getId());
         result.setStartTime(screening.getStartTime());
@@ -119,28 +115,24 @@ public class ScreeningService {
         result.setMovieId(movie.getId());
         result.setAuditoriumId(auditorium.getId());
         result.setTicketPrice(request.getTicketPrice());
-    
-        return result;        
+
+        return result;
     }
 
-    public void deleteScreening(Long id)
-    {
+    public void deleteScreening(Long id) {
         Screening screening = screeningsRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Screening not found with id" + id));
+                .orElseThrow(() -> new RuntimeException("Screening not found with id" + id));
 
         boolean isScreeningHaveBooked = screening.getBookings().size() > 0;
 
-        if (isScreeningHaveBooked)
-        {
+        if (isScreeningHaveBooked) {
             throw new RuntimeException("Screening have booked, cannot be deleted.");
         }
 
         screeningsRepository.delete(screening);
     }
 
-
-    public List<ResScreeningDTO> getAllScreen()
-    {
+    public List<ResScreeningDTO> getAllScreen() {
         List<Screening> screenings = screeningsRepository.findAll();
 
         return screenings.stream().map(screening -> {
@@ -153,30 +145,34 @@ public class ScreeningService {
             dto.setMovieName(screening.getMovie().getName());
             dto.setAuditoriumId(screening.getAuditorium().getId());
             dto.setAuditoriumName(screening.getAuditorium().getName());
+            // dto.getBookings().addAll(screening.getBookings().stream()
+            // .map(booking ->
+            // bookingService.convertToResBooking(booking)).collect(Collectors.toList()));
             return dto;
         }).collect(Collectors.toList());
 
     }
-    public ResScreeningDTO getScreeningDTOById(Long id)
-    {
+
+    public ResScreeningDTO getScreeningDTOById(Long id) {
         Screening screening = screeningsRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Screening not found with id" + id));
+                .orElseThrow(() -> new RuntimeException("Screening not found with id" + id));
 
         ResScreeningDTO dto = new ResScreeningDTO();
         dto.setId(screening.getId());
-            dto.setStartTime(screening.getStartTime());
-            dto.setEndTime(screening.getEndTime());
-            dto.setTicketPrice(screening.getTicketPrice());
-            dto.setMovieId(screening.getMovie().getId());
-            dto.setMovieName(screening.getMovie().getName());
-            dto.setAuditoriumId(screening.getAuditorium().getId());
-            dto.setAuditoriumName(screening.getAuditorium().getName());
+        dto.setStartTime(screening.getStartTime());
+        dto.setEndTime(screening.getEndTime());
+        dto.setTicketPrice(screening.getTicketPrice());
+        dto.setMovieId(screening.getMovie().getId());
+        dto.setMovieName(screening.getMovie().getName());
+        dto.setAuditoriumId(screening.getAuditorium().getId());
+        dto.setAuditoriumName(screening.getAuditorium().getName());
+        dto.getBookings().addAll(screening.getBookings().stream()
+                .map(booking -> bookingService.convertToResBooking(booking)).collect(Collectors.toList()));
 
         return dto;
     }
 
-    public List<ResScreeningDTO> getScreeningDTOByDay(LocalDate date)
-    {
+    public List<ResScreeningDTO> getScreeningDTOByDay(LocalDate date) {
         Instant startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
         Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().minusSeconds(1);
 
