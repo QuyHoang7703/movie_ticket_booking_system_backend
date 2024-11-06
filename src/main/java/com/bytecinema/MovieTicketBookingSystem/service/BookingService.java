@@ -161,7 +161,7 @@ public class BookingService {
         String hashData = VnPayUtil.getPaymentURL(vnpParamsMap, false);
         queryUrl += "&vnp_SecureHash=" + VnPayUtil.hmacSHA512(vnPayConfig.getSecretKey(), hashData);
         String paymentUrl = vnPayConfig.getVnp_PayUrl() + "?" + queryUrl;
-
+        log.info("RESULT: " +VnPayUtil.getIpAddress(request));
         ResVnPayDTO res = new ResVnPayDTO();
         res.setMessage("Success");
         res.setPaymentUrl(paymentUrl);

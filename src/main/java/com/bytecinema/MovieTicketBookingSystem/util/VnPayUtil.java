@@ -38,17 +38,19 @@ public class VnPayUtil {
 //        String ipAdress;
 //        try {
 //            ipAdress = request.getHeader("X-FORWARDED-FOR");
-//            log.info("IP ADRRESS: ", ipAdress);
+//            log.info("IP ADRRESS: " + ipAdress);
 //            if (ipAdress == null) {
 //                ipAdress = request.getRemoteAddr();
+//                log.info("IP ADRRESS: " + ipAdress);
 //            }
+//            log.info("IP ADRRESS: " + ipAdress);
 //        } catch (Exception e) {
 //            ipAdress = "Invalid IP:" + e.getMessage();
 //        }
 //        return ipAdress;
         request.getHeaderNames().asIterator()
                 .forEachRemaining(headerName ->
-                        System.out.println(">>>>" + headerName + ": " + request.getHeader(headerName))
+                        System.out.println("HI>>>>>" + headerName + ": " + request.getHeader(headerName))
                 );
         String ipAddress;
         try {
