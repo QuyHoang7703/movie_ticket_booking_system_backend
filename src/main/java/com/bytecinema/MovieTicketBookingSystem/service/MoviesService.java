@@ -101,67 +101,104 @@ public class MoviesService {
 
 
     @Transactional
-public ResMovieDTO updateMovie(Long id, ReqAddMovieDTO updateMovieDTO) {
-    // Kiểm tra sự tồn tại của phim
-    Movie movie = movieRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
-    // Xóa image cũ rồi mới update
-    List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
-            .toList();
-    if(urlImages != null && !urlImages.isEmpty()){
-        this.s3Service.deleteFiles(urlImages);
-    }
+    public ResMovieDTO updateMovie(Long id, ReqAddMovieDTO updateMovieDTO) {
+        // Kiểm tra sự tồn tại của phim
+        Movie movie = movieRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
+        // Code này check xem phim đã chiếu chưa
+        // boolean isScreeningExist = movie.getScreenings().stream().anyMatch(screening -> screening.getStartTime().isBefore(Instant.now()));
 
-    List<Movie> existedMovies = movieRepository.findByNameIgnoreCase(updateMovieDTO.getName());
-    if (!existedMovies.isEmpty() && !movie.getName().equals(updateMovieDTO.getName()))
-    {
-        throw new RuntimeException("Không thể cập nhật 1 phim đã tồn tại");
-    }
-
-    // Cập nhật thông tin phim
-    movie.setName(updateMovieDTO.getName());
-    movie.setDescription(updateMovieDTO.getDescription());
-    movie.setReleaseDay(updateMovieDTO.getReleaseDay());
-    movie.setDuration(convertToDuration(updateMovieDTO.getDuration()));
-    movie.setActors(updateMovieDTO.getActors());
-    movie.setNation(updateMovieDTO.getNation());
-    movie.setDirector(updateMovieDTO.getDirector());
-    movie.setPathTrailer(updateMovieDTO.getPathTrailer());
-
-    // Lưu phim đã cập nhật
-    Movie savedMovie = movieRepository.save(movie);
-
-    // Cập nhật thể loại
-    movieGenresRepository.deleteByMovieId(id); // Xóa các thể loại cũ
-    List<ResMovieGenreDTO> resMoviGenreDTO = new ArrayList<>();
-    if (updateMovieDTO.getGenreIds() != null && !updateMovieDTO.getGenreIds().isEmpty()) {
-        for (Long genreId : updateMovieDTO.getGenreIds()) {
-            Genre genre = genreRepository.findById(genreId)
-                .orElseThrow(() -> new RuntimeException("Genre not found with id: " + genreId));
-                
-            MovieGenre movieGenre = new MovieGenre();
-            movieGenre.setMovie(savedMovie);
-            movieGenre.setGenre(genre);
-            movieGenresRepository.save(movieGenre);
-
-            resMoviGenreDTO.add(new ResMovieGenreDTO(genre.getName(), genre.getDescription(), genre.getId()));
+        boolean isScreeningExist = movie.getScreenings().size() > 0;
+        if (isScreeningExist) {
+            throw new RuntimeException("Không thể cập nhật phim đã chiếu");
         }
-    }
-
-    // Cập nhật hình ảnh
-    imagesRepository.deleteByMovieId(id); // Xóa hình ảnh cũ
-    if (updateMovieDTO.getImagePaths() != null && !updateMovieDTO.getImagePaths().isEmpty()) {
-        for (String imagePath : updateMovieDTO.getImagePaths()) {
-            Images image = new Images();
-            image.setImagePath(imagePath);
-            image.setMovie(savedMovie);
-            imagesRepository.save(image);
+        
+        // Xóa image cũ rồi mới update
+        List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
+                .toList();
+        if(urlImages != null && !urlImages.isEmpty()){
+            this.s3Service.deleteFiles(urlImages);
         }
+
+        List<Movie> existedMovies = movieRepository.findByNameIgnoreCase(updateMovieDTO.getName());
+        if (!existedMovies.isEmpty() && !movie.getName().equals(updateMovieDTO.getName()))
+        {
+            throw new RuntimeException("Không thể cập nhật 1 phim đã tồn tại");
+        }
+
+        // Cập nhật thông tin phim
+        movie.setName(updateMovieDTO.getName());
+        movie.setDescription(updateMovieDTO.getDescription());
+        movie.setReleaseDay(updateMovieDTO.getReleaseDay());
+        movie.setDuration(convertToDuration(updateMovieDTO.getDuration()));
+        movie.setActors(updateMovieDTO.getActors());
+        movie.setNation(updateMovieDTO.getNation());
+        movie.setDirector(updateMovieDTO.getDirector());
+        movie.setPathTrailer(updateMovieDTO.getPathTrailer());
+
+        // Lưu phim đã cập nhật
+        Movie savedMovie = movieRepository.save(movie);
+
+        // Cập nhật thể loại
+        movieGenresRepository.deleteByMovieId(id); // Xóa các thể loại cũ
+        List<ResMovieGenreDTO> resMoviGenreDTO = new ArrayList<>();
+        if (updateMovieDTO.getGenreIds() != null && !updateMovieDTO.getGenreIds().isEmpty()) {
+            for (Long genreId : updateMovieDTO.getGenreIds()) {
+                Genre genre = genreRepository.findById(genreId)
+                    .orElseThrow(() -> new RuntimeException("Genre not found with id: " + genreId));
+                    
+                MovieGenre movieGenre = new MovieGenre();
+                movieGenre.setMovie(savedMovie);
+                movieGenre.setGenre(genre);
+                movieGenresRepository.save(movieGenre);
+
+                resMoviGenreDTO.add(new ResMovieGenreDTO(genre.getName(), genre.getDescription(), genre.getId()));
+            }
+        }
+
+        // Cập nhật hình ảnh
+        imagesRepository.deleteByMovieId(id); // Xóa hình ảnh cũ
+        if (updateMovieDTO.getImagePaths() != null && !updateMovieDTO.getImagePaths().isEmpty()) {
+            for (String imagePath : updateMovieDTO.getImagePaths()) {
+                Images image = new Images();
+                image.setImagePath(imagePath);
+                image.setMovie(savedMovie);
+                imagesRepository.save(image);
+            }
+        }
+
+        // Trả về thông tin phim đã cập nhật
+        return convertMovieToResMovieDTO(savedMovie);
     }
 
-    // Trả về thông tin phim đã cập nhật
-    return convertMovieToResMovieDTO(savedMovie);
-}
+    @Transactional
+    public void deleteMovie(Long id) {
+        // Kiểm tra sự tồn tại của phim
+        Movie movie = movieRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
+        // Code này check xem phim đã chiếu chưa
+        // boolean isScreeningExist = movie.getScreenings().stream().anyMatch(screening -> screening.getStartTime().isBefore(Instant.now()));
+
+        boolean isScreeningExist = movie.getScreenings().size() > 0;
+        if (isScreeningExist) {
+            throw new RuntimeException("Cannot delete movie that has been screened");
+        }
+
+        List<MovieGenre> movieGenres = movie.getMovieGenres();
+        if (movieGenres != null && !movieGenres.isEmpty()) {
+            movieGenresRepository.deleteAll(movieGenres);
+        }
+
+        // Xóa image
+        List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
+                .toList();
+        if(urlImages != null && !urlImages.isEmpty()){
+            this.s3Service.deleteFiles(urlImages);
+        }
+
+        // Xóa phim
+        movieRepository.delete(movie);
+    }
 
     
     public List<ResMovieDTO> getAllMovies()
