@@ -46,17 +46,18 @@ public class VnPayUtil {
 //            ipAdress = "Invalid IP:" + e.getMessage();
 //        }
 //        return ipAdress;
+        request.getHeaderNames().asIterator()
+                .forEachRemaining(headerName ->
+                        System.out.println(">>>>" + headerName + ": " + request.getHeader(headerName))
+                );
         String ipAddress;
         try {
             ipAddress = request.getHeader("X-Forwarded-For");
             if (ipAddress != null && !ipAddress.isEmpty()) {
-                // Nếu header X-Forwarded-For chứa nhiều IP, lấy IP đầu tiên
                 ipAddress = ipAddress.split(",")[0].trim();
             } else {
-                // Nếu không có X-Forwarded-For, lấy IP từ request trực tiếp
                 ipAddress = request.getRemoteAddr();
             }
-
         } catch (Exception e) {
             ipAddress = "Invalid IP: " + e.getMessage();
         }
