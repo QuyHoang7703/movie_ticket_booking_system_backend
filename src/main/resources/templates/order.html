@@ -78,42 +78,40 @@
     </div>
     <div class="content">
         <div class="details">
-            <span>Tên khách hàng:</span> <span>th:text="${booking.name}"</span>
+            <span>Tên khách hàng:</span> <span th:text="${resBooking.getNameUser()}"> Name of user</span>
         </div>
         <div class="details">
-            <span>Email:</span> <span>th:text="${booking.email}"</span>
+            <span>Email:</span> <span th:text="${resBooking.getEmail()}"> Email of user</span>
         </div>
         <div class="details">
-            <span>Mã thanh toán:</span> <span>th:text="${booking.transactionCode}"</span>
+            <span>Mã thanh toán:</span> <span th:text="${resBooking.getTransactionCode()}"> Transaction code</span>
         </div>
         <div class="details">
-            <span>Mã thanh toán 2:</span> <span>th:text="${transactionCode}"</span>
+            <span>Phim:</span> <span th:text="${resBooking.getNameMovie()}"> Movie name</span>
         </div>
         <div class="details">
-            <span>Phim:</span> <span>th:text="${booking.screening.movie.name}"</span>
+            <span>Thời gian chiếu:</span> <span th:text="${#dates.format(resBooking.getStartTime(), 'HH:mm dd-MM-yyyy')}"> Time start movie</span>
         </div>
         <div class="details">
-            <span>Thời gian chiếu:</span> <span>th:text="${booking.screening.startTime}"</span>
+            <span>Thời gian đặt vé:</span> <span th:text="${#dates.format(resBooking.getBookingTime(), 'HH:mm dd-MM-yyyy')}"> Time booking</span>
         </div>
         <div class="details">
-            <span>Thời gian đặt vé:</span> <span>th:text="${booking.timeBooking}"</span>
-        </div>
-        <div class="details">
-            <span>Phòng chiếu:</span> <span>th:text="${booking.screening.auditorium.name}"</span>
+            <span>Phòng chiếu:</span> <span th:text="${resBooking.getNameAuditorium()}"> Name of auditorium</span>
+            <span>, </span>
         </div>
         <div class="details seats">
             <span>Ghế:</span>
-            <span th:each="seat : ${nameSeats}" th:text="${seat}"></span>
+<!--            <span th:each="nameSeat : ${resBooking.getNameSeats()}" th:text="${nameSeat}"> Name ordered seat</span>-->
+            <span th:each="nameSeat, iterStat : ${resBooking.nameSeats}">
+            <span th:text="${nameSeat}"></span>
+            <span th:if="${!iterStat.last}">, </span> <!-- Thêm dấu phẩy trừ khi đây là phần tử cuối cùng -->
+    </span>
         </div>
         <div class="details">
-            <span>Tổng tiền:</span> <span>th:text="${booking.formattedTicketPrice}"</span>
+            <span>Tổng tiền:</span> <span th:text="${resBooking.getFormattedTotalPrice()}"> Total price of ticket</span>
         </div>
-<!--        <div class="details">-->
-<!--            <span>Trạng thái thanh toán:</span> <span class="status">th:text="${userName}"</span>-->
-<!--        </div>-->
-
         <div class="details">
-            <span>Thời gian thanh toán:</span> <span>th:text="${booking.paymentTime}"</span>
+            <span>Thời gian thanh toán:</span> <span th:text="${#dates.format(resBooking.getPaidTime(), 'HH:mm dd-MM-yyyy')}"> Payment time</span>
         </div>
 
     </div>
