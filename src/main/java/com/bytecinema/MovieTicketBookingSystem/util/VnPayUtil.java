@@ -35,35 +35,35 @@ public class VnPayUtil {
     }
 
     public static String getIpAddress(HttpServletRequest request) {
-//        String ipAdress;
-//        try {
-//            ipAdress = request.getHeader("X-FORWARDED-FOR");
-//            log.info("IP ADRRESS: " + ipAdress);
-//            if (ipAdress == null) {
-//                ipAdress = request.getRemoteAddr();
-//                log.info("IP ADRRESS: " + ipAdress);
-//            }
-//            log.info("IP ADRRESS: " + ipAdress);
-//        } catch (Exception e) {
-//            ipAdress = "Invalid IP:" + e.getMessage();
-//        }
-//        return ipAdress;
-        request.getHeaderNames().asIterator()
-                .forEachRemaining(headerName ->
-                        System.out.println("HI>>>>>" + headerName + ": " + request.getHeader(headerName))
-                );
-        String ipAddress;
+        String ipAdress;
         try {
-            ipAddress = request.getHeader("X-Forwarded-For");
-            if (ipAddress != null && !ipAddress.isEmpty()) {
-                ipAddress = ipAddress.split(",")[0].trim();
-            } else {
-                ipAddress = request.getRemoteAddr();
+            ipAdress = request.getHeader("X-FORWARDED-FOR");
+            log.info("IP ADRRESS: " + ipAdress);
+            if (ipAdress == null) {
+                ipAdress = request.getRemoteAddr();
+                log.info("IP ADRRESS: " + ipAdress);
             }
+            log.info("IP ADRRESS: " + ipAdress);
         } catch (Exception e) {
-            ipAddress = "Invalid IP: " + e.getMessage();
+            ipAdress = "Invalid IP:" + e.getMessage();
         }
-        return ipAddress;
+        return ipAdress;
+//        request.getHeaderNames().asIterator()
+//                .forEachRemaining(headerName ->
+//                        System.out.println("HI>>>>>" + headerName + ": " + request.getHeader(headerName))
+//                );
+//        String ipAddress;
+//        try {
+//            ipAddress = request.getHeader("X-Forwarded-For");
+//            if (ipAddress != null && !ipAddress.isEmpty()) {
+//                ipAddress = ipAddress.split(",")[0].trim();
+//            } else {
+//                ipAddress = request.getRemoteAddr();
+//            }
+//        } catch (Exception e) {
+//            ipAddress = "Invalid IP: " + e.getMessage();
+//        }
+//        return ipAddress;
     }
 
     public static String getRandomNumber(int len) {
