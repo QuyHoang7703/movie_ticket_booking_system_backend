@@ -189,6 +189,11 @@ public class MoviesService {
             movieGenresRepository.deleteAll(movieGenres);
         }
 
+        List<Images> images = movie.getImages();
+        if (images != null && !images.isEmpty()) {
+            imagesRepository.deleteAll(images);
+        }
+
         // Xóa image
         List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
                 .toList();
