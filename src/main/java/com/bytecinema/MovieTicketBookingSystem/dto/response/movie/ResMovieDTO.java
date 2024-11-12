@@ -22,6 +22,7 @@ public class ResMovieDTO {
     private String description;
     private List<ResScreeningDTO> screenings;
     private String pathTrailer;
+    private String language;
 
     // Constructors
     public ResMovieDTO() {}

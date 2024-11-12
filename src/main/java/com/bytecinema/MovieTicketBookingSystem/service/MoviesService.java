@@ -56,6 +56,7 @@ public class MoviesService {
         movie.setNation(addMovieDTO.getNation());
         movie.setDirector(addMovieDTO.getDirector());
         movie.setPathTrailer(addMovieDTO.getPathTrailer());
+        movie.setLanguage(addMovieDTO.getLanguage());
 
         Movie savedMovie = movieRepository.save(movie);
 
@@ -68,6 +69,7 @@ public class MoviesService {
         resMovieDTO.setNation(savedMovie.getNation());
         resMovieDTO.setDescription(savedMovie.getDescription());
         resMovieDTO.setPathTrailer(savedMovie.getPathTrailer());
+        resMovieDTO.setLanguage(savedMovie.getLanguage());
 
         if (addMovieDTO.getGenreIds() != null && !addMovieDTO.getGenreIds().isEmpty())
         {
@@ -139,6 +141,7 @@ public class MoviesService {
         movie.setNation(updateMovieDTO.getNation());
         movie.setDirector(updateMovieDTO.getDirector());
         movie.setPathTrailer(updateMovieDTO.getPathTrailer());
+        movie.setLanguage(updateMovieDTO.getLanguage());
 
         // Lưu phim đã cập nhật
         Movie savedMovie = movieRepository.save(movie);
@@ -273,6 +276,7 @@ public class MoviesService {
                 dto.setNation(movie.getNation());
                 dto.setDescription(movie.getDescription());
                 dto.setPathTrailer(movie.getPathTrailer());
+                dto.setLanguage(movie.getLanguage());
 
                 List<ResMovieGenreDTO> genreDTOs = movie.getMovieGenres().stream()
                 .map(movieGenre -> {

@@ -40,6 +40,7 @@ public class Movie {
     private Instant createAt;
     private Instant updateAt;
     private String pathTrailer;
+    private String language;
     
     @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
     private List<MovieGenre> movieGenres;

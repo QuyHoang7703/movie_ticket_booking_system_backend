@@ -21,6 +21,7 @@ public class ResBooking {
     private String representativeMovieImage;
     private Duration duration;
     private String nation;
+    private String language;
 
     private String formattedPerTicketPrice;
 

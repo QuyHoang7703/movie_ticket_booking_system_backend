@@ -40,6 +40,9 @@ public class ReqAddMovieDTO {
     @NotNull(message = "PathTrailer cannot be null")
     private String pathTrailer;
 
+    @NotNull(message = "Language cannot be null")
+    private String language;
+
     private List<Long> genreIds;
 
     private List<String> imagePaths;

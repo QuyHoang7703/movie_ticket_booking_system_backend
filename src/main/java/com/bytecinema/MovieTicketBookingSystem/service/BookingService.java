@@ -103,6 +103,7 @@ public class BookingService {
         resBooking.setRepresentativeMovieImage(movie.getImages().get(0).getImagePath());
         resBooking.setDuration(movie.getDuration());
         resBooking.setNation(movie.getNation());
+        resBooking.setLanguage(movie.getLanguage());
 
 
         if(booking.getTransactionCode() != null){
