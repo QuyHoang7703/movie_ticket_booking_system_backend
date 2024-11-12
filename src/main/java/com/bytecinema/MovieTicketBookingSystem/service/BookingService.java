@@ -4,6 +4,8 @@ import com.bytecinema.MovieTicketBookingSystem.config.VnPayConfig;
 import com.bytecinema.MovieTicketBookingSystem.domain.*;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.booking.ReqBooking;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.booking.ResBooking;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.booking.ResGeneralCompletedBookingDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.pagination.ResultPaginationDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.vnpay.ResVnPayDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.BookingRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.ScreeningsRepository;
@@ -12,9 +14,14 @@ import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
 import com.bytecinema.MovieTicketBookingSystem.util.VnPayUtil;
 import com.bytecinema.MovieTicketBookingSystem.util.constant.StatusPayment;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
@@ -24,6 +31,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -230,4 +238,73 @@ public class BookingService {
                 .orElseThrow(()-> new IdInValidException("Can not find booking with transaction code : " + transactionCode));
         return this.convertToResBooking(bookingDb);
     }
+
+    public ResGeneralCompletedBookingDTO convertToResGeneralCompletedBookingDTO(Booking booking) throws IdInValidException {
+        ResGeneralCompletedBookingDTO res = new ResGeneralCompletedBookingDTO();
+        Movie movie = booking.getScreening().getMovie();
+        res.setBookingId(booking.getId());
+        res.setNameMovie(movie.getName());
+        res.setRepresentativeMovieImage(movie.getImages().get(0).getImagePath());
+        res.setSeatsNumber(booking.getSeats().size());
+        res.setFormattedTotalPrice(this.formatCurrency(booking.getTicketPrice()));
+        res.setNameAuditorium(booking.getScreening().getAuditorium().getName());
+        res.setStartTime(booking.getScreening().getStartTime());
+        res.setPaidTime(booking.getScreening().getEndTime());
+
+        return res;
+    }
+
+    public ResultPaginationDTO getAllGeneralCompletedBookings(Specification<Booking> spec, Pageable pageable, boolean isAlreadyScreened) {
+        String email = SecurityUtil.getCurrentLogin().isPresent() ? SecurityUtil.getCurrentLogin().get() : null;
+
+        Specification<Booking> newSpec = (root, query, criteriaBuilder) -> {
+            Join<Booking, User> joinUser = root.join("user");
+
+            Predicate emailPredicate = criteriaBuilder.equal(joinUser.get("email"), email);
+
+            Join<Booking, Screening> joinScreening = root.join("screening");
+
+            Predicate statusCompletedBooking;
+            if(!isAlreadyScreened){
+                statusCompletedBooking = criteriaBuilder.greaterThan(joinScreening.get("startTime"), Instant.now());
+            }else{
+                statusCompletedBooking = criteriaBuilder.lessThan(joinScreening.get("startTime"), Instant.now());
+            }
+
+            Predicate isPaidPredicate = criteriaBuilder.equal(root.get("statusPayment"), StatusPayment.PAID);
+
+            return criteriaBuilder.and(emailPredicate, statusCompletedBooking, isPaidPredicate);
+        };
+
+        Specification<Booking> finalSpec = spec.and(newSpec);
+        Page<Booking> bookingPage = this.bookingRepository.findAll(finalSpec, pageable);
+
+        ResultPaginationDTO res = new ResultPaginationDTO();
+
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+
+        meta.setPage(pageable.getPageNumber()+1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(bookingPage.getTotalPages());
+        meta.setTotal(bookingPage.getTotalElements());
+
+        res.setMeta(meta);
+
+        List<ResGeneralCompletedBookingDTO> resList = bookingPage.getContent().stream()
+                .map(item -> {
+                    try {
+                        return this.convertToResGeneralCompletedBookingDTO(item);
+                    } catch (IdInValidException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList();
+
+        res.setResult(resList);
+
+        return res;
+    }
+
+
+
 }
