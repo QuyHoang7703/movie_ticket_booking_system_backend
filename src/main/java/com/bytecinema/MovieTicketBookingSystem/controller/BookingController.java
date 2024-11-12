@@ -68,10 +68,9 @@ public class BookingController {
         }
     }
 
-//    @GetMapping("/payment-success")
-//    public ResponseEntity<String> paymentSuccess(@RequestParam String transactionId) {
-//        return ResponseEntity.ok("Payment Successful! Transaction ID: " + transactionId);
-//    }
-
+    @GetMapping("/bookings/successful")
+    public ResponseEntity<ResBooking> paymentSuccess(@RequestParam("transactionCode") String transactionCode) throws IdInValidException {
+        return ResponseEntity.status(HttpStatus.OK).body(this.bookingService.getSuccessfulBooking(transactionCode));
+    }
 
 }

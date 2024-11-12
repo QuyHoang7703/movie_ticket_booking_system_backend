@@ -206,6 +206,11 @@ public class BookingService {
                 this.bookingRepository.delete(booking);
             }
         }
+    }
 
+    public ResBooking getSuccessfulBooking(String transactionCode) throws IdInValidException {
+        Booking bookingDb = this.bookingRepository.findByTransactionCode(transactionCode)
+                .orElseThrow(()-> new IdInValidException("Can not find booking with transaction code : " + transactionCode));
+        return this.convertToResBooking(bookingDb);
     }
 }
