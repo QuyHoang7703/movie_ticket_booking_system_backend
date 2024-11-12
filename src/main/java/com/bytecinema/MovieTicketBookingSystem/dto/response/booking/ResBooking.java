@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 @Data
@@ -17,6 +18,12 @@ public class ResBooking {
     private long bookingId;
 
     private String nameMovie;
+    private String representativeMovieImage;
+    private Duration duration;
+    private String nation;
+
+    private String formattedPerTicketPrice;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm dd-MM-yyy", timezone = "GMT+7")
     private Instant startTime;
 
@@ -24,6 +31,7 @@ public class ResBooking {
     private Instant bookingTime;
 
     private String nameAuditorium;
+    private int seatsNumber;
     private List<String> nameSeats;
 
 //    private BigDecimal totalPrice;

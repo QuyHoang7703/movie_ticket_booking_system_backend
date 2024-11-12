@@ -46,7 +46,7 @@ public class Booking {
     @PrePersist
     public void prePersist(){
         this.timeBooking = Instant.now();
-        this.paymentExpiryTime = Instant.now().plus(2, ChronoUnit.MINUTES);
+        this.paymentExpiryTime = Instant.now().plus(4, ChronoUnit.MINUTES);
 
     }
 
@@ -55,9 +55,9 @@ public class Booking {
         this.paymentTime = Instant.now();
     }
 
-    public String getFormattedTicketPrice() {
-        NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
-        return format.format(ticketPrice);
-    }
+//    public String getFormattedTicketPrice() {
+//        NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+//        return format.format(ticketPrice);
+//    }
 
 }

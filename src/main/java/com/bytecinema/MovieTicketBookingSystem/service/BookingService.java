@@ -1,10 +1,7 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
 import com.bytecinema.MovieTicketBookingSystem.config.VnPayConfig;
-import com.bytecinema.MovieTicketBookingSystem.domain.Booking;
-import com.bytecinema.MovieTicketBookingSystem.domain.Screening;
-import com.bytecinema.MovieTicketBookingSystem.domain.Seat;
-import com.bytecinema.MovieTicketBookingSystem.domain.User;
+import com.bytecinema.MovieTicketBookingSystem.domain.*;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.booking.ReqBooking;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.booking.ResBooking;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.vnpay.ResVnPayDTO;
@@ -101,6 +98,13 @@ public class BookingService {
         resBooking.setNameAuditorium(booking.getScreening().getAuditorium().getName());
         resBooking.setStatusPayment(booking.getStatusPayment());
         resBooking.setPaidTime(booking.getPaymentTime());
+
+        Movie movie = booking.getScreening().getMovie();
+        resBooking.setRepresentativeMovieImage(movie.getImages().get(0).getImagePath());
+        resBooking.setDuration(movie.getDuration());
+        resBooking.setNation(movie.getNation());
+
+
         if(booking.getTransactionCode() != null){
             resBooking.setTransactionCode(booking.getTransactionCode());
         }
@@ -108,16 +112,28 @@ public class BookingService {
         List<String> nameSeats = seats.stream()
                 .map(seat -> seat.getSeatRow() + seat.getSeatNumber())
                 .toList();
+        resBooking.setSeatsNumber(seats.size());
         resBooking.setNameSeats(nameSeats);
+
+        BigDecimal perTicketPrice = booking.getTicketPrice().divide(BigDecimal.valueOf(seats.size()), RoundingMode.HALF_UP);
+        resBooking.setFormattedPerTicketPrice(this.formatCurrency(perTicketPrice));
+
         resBooking.setFormattedTotalPrice(this.formatCurrency(booking.getTicketPrice()));
 
         return resBooking;
     }
 
+//    private String formatCurrency(BigDecimal amount) {
+//        NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+//        return formatter.format(amount);
+//    }
     private String formatCurrency(BigDecimal amount) {
-        NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
-        return formatter.format(amount);
+        NumberFormat formatter = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
+        formatter.setMinimumFractionDigits(0); // Loại bỏ phần thập phân nếu không cần thiết
+        formatter.setMaximumFractionDigits(0);
+        return formatter.format(amount) + " VND";
     }
+
 
     public ResBooking getBookingById(long bookingId) throws IdInValidException {
         String email = SecurityUtil.getCurrentLogin().isPresent() ? SecurityUtil.getCurrentLogin().get() : "";
