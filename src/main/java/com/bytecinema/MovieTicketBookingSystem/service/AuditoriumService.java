@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Auditorium;
+import com.bytecinema.MovieTicketBookingSystem.domain.Screening;
 import com.bytecinema.MovieTicketBookingSystem.domain.Seat;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.auditorium.ReqAddAuditorium;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResAuditoriumDTO;
@@ -50,52 +51,73 @@ public class AuditoriumService {
     
         return resAuditoriumDTO;
     }
+
+    public void deleteAuditorium(Long id)
+    {
+        Auditorium auditorium = auditoriumsRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Auditorium not found with id: " + id));
+
+        List<Screening> screenings = auditorium.getScreenings();
+        if (!screenings.isEmpty())
+        {
+            throw new RuntimeException("Auditorium is used in screening");
+            
+        }
+        List<Seat> seats = seatsRepository.findByAuditorium(auditorium);
+        if (!seats.isEmpty())
+        {
+            seatsRepository.deleteAll(seats);
+        }
+        
+        auditoriumsRepository.delete(auditorium);
+    }
     
     private List<Seat> addSeatsToAuditorium(Auditorium auditorium, int seatsPerRow) {
-    int totalSeats = auditorium.getCapacity();
-    int fullRows = totalSeats / seatsPerRow;
-    List<Seat> seatList = new ArrayList<>();  // Khởi tạo danh sách để lưu các ghế đã tạo
+        int totalSeats = auditorium.getCapacity();
+        int fullRows = totalSeats / seatsPerRow;
+        List<Seat> seatList = new ArrayList<>();  // Khởi tạo danh sách để lưu các ghế đã tạo
 
-    for (int i = 0; i < totalSeats; i++) {
-        Seat seat = new Seat();
+        for (int i = 0; i < totalSeats; i++) {
+            Seat seat = new Seat();
 
-        int rowNumber;
-        int seatNumber;
+            int rowNumber;
+            int seatNumber;
 
-        if (i < fullRows * seatsPerRow) {
-            rowNumber = i / seatsPerRow;
-            seatNumber = i % seatsPerRow + 1;
-        } else {
-            rowNumber = fullRows;
-            seatNumber = i - (fullRows * seatsPerRow) + 1;
+            if (i < fullRows * seatsPerRow) {
+                rowNumber = i / seatsPerRow;
+                seatNumber = i % seatsPerRow + 1;
+            } else {
+                rowNumber = fullRows;
+                seatNumber = i - (fullRows * seatsPerRow) + 1;
+            }
+
+            char seatRow = (char) ('A' + rowNumber);
+
+            seat.setSeatNumber(seatNumber);
+            seat.setSeatRow(String.valueOf(seatRow));
+            seat.setAuditorium(auditorium);
+
+            seatList.add(seat);  // Thêm ghế vào danh sách
+            seatsRepository.save(seat);  // Lưu vào database
         }
 
-        char seatRow = (char) ('A' + rowNumber);
-
-        seat.setSeatNumber(seatNumber);
-        seat.setSeatRow(String.valueOf(seatRow));
-        seat.setAuditorium(auditorium);
-
-        seatList.add(seat);  // Thêm ghế vào danh sách
-        seatsRepository.save(seat);  // Lưu vào database
+        return seatList;  // Trả về danh sách các ghế đã tạo
     }
 
-    return seatList;  // Trả về danh sách các ghế đã tạo
-}
-private List<ResSeatDTO> convertToResSeatDTO(List<Seat> seats) {
-    List<ResSeatDTO> seatDTOs = new ArrayList<>();
+    private List<ResSeatDTO> convertToResSeatDTO(List<Seat> seats) {
+        List<ResSeatDTO> seatDTOs = new ArrayList<>();
 
-    for (Seat seat : seats) {
-        ResSeatDTO seatDTO = new ResSeatDTO();
-        seatDTO.setId(seat.getId());
-        seatDTO.setSeatNumber(seat.getSeatNumber());
-        seatDTO.setSeatRow(seat.getSeatRow());
+        for (Seat seat : seats) {
+            ResSeatDTO seatDTO = new ResSeatDTO();
+            seatDTO.setId(seat.getId());
+            seatDTO.setSeatNumber(seat.getSeatNumber());
+            seatDTO.setSeatRow(seat.getSeatRow());
 
-        seatDTOs.add(seatDTO);
+            seatDTOs.add(seatDTO);
+        }
+
+        return seatDTOs;
     }
-
-    return seatDTOs;
-}
 
 
     public ResAuditoriumDTO getAuditoriumById(Long id)

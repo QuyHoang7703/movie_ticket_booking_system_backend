@@ -71,4 +71,11 @@ public class ScreeningController {
         screeningService.deleteScreening(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/screening-booking-count/{id}")
+    public ResponseEntity<Integer> getBookingCount(@PathVariable Long id)
+    {
+        Integer res = screeningService.getBookingCountByScreeningId(id);
+        return ResponseEntity.ok(res);
+    }
 }
