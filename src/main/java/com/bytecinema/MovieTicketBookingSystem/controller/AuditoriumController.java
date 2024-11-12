@@ -3,16 +3,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bytecinema.MovieTicketBookingSystem.dto.request.auditorium.ReqAddAuditorium;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.auditorium.ReqUpdateAuditorium;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResAuditoriumDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResAuditoriumStatusDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResUpdateAuditoriumDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.AuditoriumService;
 
 import jakarta.validation.Valid;
@@ -34,6 +39,14 @@ public class AuditoriumController {
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/auditorium/{id}")
+    public ResponseEntity<Void> deleteAuditorium(@PathVariable Long id)
+    {
+        auditoriumService.deleteAuditorium(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/auditorium/{id}")
     public ResponseEntity<ResAuditoriumDTO> getAuditoriumById(@PathVariable Long id)
     {
@@ -53,5 +66,20 @@ public class AuditoriumController {
     {
         List<ResAuditoriumDTO> auditoriums = auditoriumService.getAuditoriumsByName(name);
         return ResponseEntity.ok(auditoriums);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/auditorium/{id}")
+    public ResponseEntity<ResUpdateAuditoriumDTO> updateAuditorium(@PathVariable Long id, @Valid @RequestBody ReqUpdateAuditorium req)
+    {
+        ResUpdateAuditoriumDTO updatedAuditorium = auditoriumService.updateAuditorium(id, req);
+        return ResponseEntity.ok(updatedAuditorium);
+    }
+
+    @GetMapping("/auditorium/status/{id}")
+    public ResponseEntity<ResAuditoriumStatusDTO> getStatus(@PathVariable Long id)
+    {
+        ResAuditoriumStatusDTO status = auditoriumService.getStatusAuditorium(id);
+        return ResponseEntity.ok(status);
     }
 }

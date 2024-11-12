@@ -1,6 +1,8 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.bytecinema.MovieTicketBookingSystem.domain.Booking;
 import com.bytecinema.MovieTicketBookingSystem.domain.Genre;
 import com.bytecinema.MovieTicketBookingSystem.domain.Images;
 import com.bytecinema.MovieTicketBookingSystem.domain.Movie;
@@ -8,6 +10,7 @@ import com.bytecinema.MovieTicketBookingSystem.domain.MovieGenre;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.movie.ReqAddMovieDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieGenreDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieRevenueDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.screening.ResScreeningDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.GenreRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.ImagesRepository;
@@ -16,6 +19,7 @@ import com.bytecinema.MovieTicketBookingSystem.repository.MovieRepository;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -311,5 +315,22 @@ public class MoviesService {
         return result;
     }
 
-    
+    public ResMovieRevenueDTO getMovieRevenue(Long movieId) {
+        Movie movie = movieRepository.findById(movieId)
+            .orElseThrow(() -> new RuntimeException("Movie not found with id: " + movieId));
+        
+        // Tính tổng số vé đã bán và doanh thu
+        long totalTicketsSold = 0;
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+
+        for (Screening screening : movie.getScreenings()) {
+            for (Booking booking : screening.getBookings()) {
+                int ticketsCount = booking.getSeats().size();
+                totalTicketsSold += ticketsCount;
+                totalRevenue = totalRevenue.add(screening.getTicketPrice().multiply(BigDecimal.valueOf(ticketsCount)));
+            }
+        }
+
+        return new ResMovieRevenueDTO(totalTicketsSold, totalRevenue);
+    }
 }

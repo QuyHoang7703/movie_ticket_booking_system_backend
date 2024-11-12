@@ -2,13 +2,19 @@ package com.bytecinema.MovieTicketBookingSystem.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.time.Instant;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Auditorium;
+import com.bytecinema.MovieTicketBookingSystem.domain.Screening;
 import com.bytecinema.MovieTicketBookingSystem.domain.Seat;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.auditorium.ReqAddAuditorium;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.auditorium.ReqUpdateAuditorium;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResAuditoriumDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResAuditoriumStatusDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResUpdateAuditoriumDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.seat.ResSeatDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.AuditoriumsRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.SeatsRepository;
@@ -50,52 +56,100 @@ public class AuditoriumService {
     
         return resAuditoriumDTO;
     }
-    
-    private List<Seat> addSeatsToAuditorium(Auditorium auditorium, int seatsPerRow) {
-    int totalSeats = auditorium.getCapacity();
-    int fullRows = totalSeats / seatsPerRow;
-    List<Seat> seatList = new ArrayList<>();  // Khởi tạo danh sách để lưu các ghế đã tạo
 
-    for (int i = 0; i < totalSeats; i++) {
-        Seat seat = new Seat();
+    @Transactional
+    public ResUpdateAuditoriumDTO updateAuditorium(Long id, ReqUpdateAuditorium req)
+    {
+        Auditorium auditorium = auditoriumsRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Auditorium not found with id: " + id));
 
-        int rowNumber;
-        int seatNumber;
-
-        if (i < fullRows * seatsPerRow) {
-            rowNumber = i / seatsPerRow;
-            seatNumber = i % seatsPerRow + 1;
-        } else {
-            rowNumber = fullRows;
-            seatNumber = i - (fullRows * seatsPerRow) + 1;
+        List<Auditorium> existedAuditoriums = auditoriumsRepository.findByNameIgnoreCase(req.getName());
+        if (!existedAuditoriums.isEmpty() && !auditorium.getName().equals(req.getName()))   
+        {
+            throw new RuntimeException("Tên phòng chiếu đã được sử dụng");
         }
 
-        char seatRow = (char) ('A' + rowNumber);
+        if (req.getName() != null)
+        {
+            auditorium.setName(req.getName());
+        }
 
-        seat.setSeatNumber(seatNumber);
-        seat.setSeatRow(String.valueOf(seatRow));
-        seat.setAuditorium(auditorium);
+        auditoriumsRepository.save(auditorium);
 
-        seatList.add(seat);  // Thêm ghế vào danh sách
-        seatsRepository.save(seat);  // Lưu vào database
+        ResUpdateAuditoriumDTO updated = new ResUpdateAuditoriumDTO();
+        updated.setId(id);
+        updated.setName(req.getName());
+
+        return updated;
+
     }
 
-    return seatList;  // Trả về danh sách các ghế đã tạo
-}
-private List<ResSeatDTO> convertToResSeatDTO(List<Seat> seats) {
-    List<ResSeatDTO> seatDTOs = new ArrayList<>();
+    public void deleteAuditorium(Long id)
+    {
+        Auditorium auditorium = auditoriumsRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Auditorium not found with id: " + id));
 
-    for (Seat seat : seats) {
-        ResSeatDTO seatDTO = new ResSeatDTO();
-        seatDTO.setId(seat.getId());
-        seatDTO.setSeatNumber(seat.getSeatNumber());
-        seatDTO.setSeatRow(seat.getSeatRow());
+        List<Screening> screenings = auditorium.getScreenings();
+        if (!screenings.isEmpty())
+        {
+            throw new RuntimeException("Auditorium is used in screening");
+            
+        }
+        List<Seat> seats = seatsRepository.findByAuditorium(auditorium);
+        if (!seats.isEmpty())
+        {
+            seatsRepository.deleteAll(seats);
+        }
+        
+        auditoriumsRepository.delete(auditorium);
+    }
+    
+    private List<Seat> addSeatsToAuditorium(Auditorium auditorium, int seatsPerRow) {
+        int totalSeats = auditorium.getCapacity();
+        int fullRows = totalSeats / seatsPerRow;
+        List<Seat> seatList = new ArrayList<>();  // Khởi tạo danh sách để lưu các ghế đã tạo
 
-        seatDTOs.add(seatDTO);
+        for (int i = 0; i < totalSeats; i++) {
+            Seat seat = new Seat();
+
+            int rowNumber;
+            int seatNumber;
+
+            if (i < fullRows * seatsPerRow) {
+                rowNumber = i / seatsPerRow;
+                seatNumber = i % seatsPerRow + 1;
+            } else {
+                rowNumber = fullRows;
+                seatNumber = i - (fullRows * seatsPerRow) + 1;
+            }
+
+            char seatRow = (char) ('A' + rowNumber);
+
+            seat.setSeatNumber(seatNumber);
+            seat.setSeatRow(String.valueOf(seatRow));
+            seat.setAuditorium(auditorium);
+
+            seatList.add(seat);  // Thêm ghế vào danh sách
+            seatsRepository.save(seat);  // Lưu vào database
+        }
+
+        return seatList;  // Trả về danh sách các ghế đã tạo
     }
 
-    return seatDTOs;
-}
+    private List<ResSeatDTO> convertToResSeatDTO(List<Seat> seats) {
+        List<ResSeatDTO> seatDTOs = new ArrayList<>();
+
+        for (Seat seat : seats) {
+            ResSeatDTO seatDTO = new ResSeatDTO();
+            seatDTO.setId(seat.getId());
+            seatDTO.setSeatNumber(seat.getSeatNumber());
+            seatDTO.setSeatRow(seat.getSeatRow());
+
+            seatDTOs.add(seatDTO);
+        }
+
+        return seatDTOs;
+    }
 
 
     public ResAuditoriumDTO getAuditoriumById(Long id)
@@ -130,6 +184,21 @@ private List<ResSeatDTO> convertToResSeatDTO(List<Seat> seats) {
         }
     
         return resAuditoriumDTOs;
+    }
+
+        public ResAuditoriumStatusDTO getStatusAuditorium(Long id)
+    {
+        Auditorium auditorium = auditoriumsRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Auditorium not found with id: " + id));
+
+        Instant now = Instant.now();
+        boolean isScreeningActive = auditorium.getScreenings().stream()
+            .anyMatch(screening -> screening.getStartTime().isBefore(now) && screening.getEndTime().isAfter(now));
+
+        ResAuditoriumStatusDTO res = new ResAuditoriumStatusDTO();
+        res.setStatus(isScreeningActive);
+
+        return res;
     }
     
     public List<ResAuditoriumDTO> getAuditoriumsByName(String name)
