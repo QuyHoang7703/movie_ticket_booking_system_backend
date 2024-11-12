@@ -2,14 +2,19 @@ package com.bytecinema.MovieTicketBookingSystem.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.time.Instant;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Auditorium;
 import com.bytecinema.MovieTicketBookingSystem.domain.Screening;
 import com.bytecinema.MovieTicketBookingSystem.domain.Seat;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.auditorium.ReqAddAuditorium;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.auditorium.ReqUpdateAuditorium;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResAuditoriumDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResAuditoriumStatusDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.auditorium.ResUpdateAuditoriumDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.seat.ResSeatDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.AuditoriumsRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.SeatsRepository;
@@ -50,6 +55,33 @@ public class AuditoriumService {
         resAuditoriumDTO.setSeats(seatDTOs);  // Thêm danh sách ghế vào DTO
     
         return resAuditoriumDTO;
+    }
+
+    @Transactional
+    public ResUpdateAuditoriumDTO updateAuditorium(Long id, ReqUpdateAuditorium req)
+    {
+        Auditorium auditorium = auditoriumsRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Auditorium not found with id: " + id));
+
+        List<Auditorium> existedAuditoriums = auditoriumsRepository.findByNameIgnoreCase(req.getName());
+        if (!existedAuditoriums.isEmpty() && !auditorium.getName().equals(req.getName()))   
+        {
+            throw new RuntimeException("Tên phòng chiếu đã được sử dụng");
+        }
+
+        if (req.getName() != null)
+        {
+            auditorium.setName(req.getName());
+        }
+
+        auditoriumsRepository.save(auditorium);
+
+        ResUpdateAuditoriumDTO updated = new ResUpdateAuditoriumDTO();
+        updated.setId(id);
+        updated.setName(req.getName());
+
+        return updated;
+
     }
 
     public void deleteAuditorium(Long id)
@@ -152,6 +184,21 @@ public class AuditoriumService {
         }
     
         return resAuditoriumDTOs;
+    }
+
+        public ResAuditoriumStatusDTO getStatusAuditorium(Long id)
+    {
+        Auditorium auditorium = auditoriumsRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Auditorium not found with id: " + id));
+
+        Instant now = Instant.now();
+        boolean isScreeningActive = auditorium.getScreenings().stream()
+            .anyMatch(screening -> screening.getStartTime().isBefore(now) && screening.getEndTime().isAfter(now));
+
+        ResAuditoriumStatusDTO res = new ResAuditoriumStatusDTO();
+        res.setStatus(isScreeningActive);
+
+        return res;
     }
     
     public List<ResAuditoriumDTO> getAuditoriumsByName(String name)

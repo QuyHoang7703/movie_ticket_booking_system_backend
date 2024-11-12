@@ -20,6 +20,7 @@ import com.bytecinema.MovieTicketBookingSystem.domain.Movie;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.movie.ReqAddMovieDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.genre.ResGenreDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieRevenueDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.MoviesService;
 import com.bytecinema.MovieTicketBookingSystem.service.S3Service;
 
@@ -86,15 +87,15 @@ public class MovieController {
     }
 
     @GetMapping("/movies/{id}")
-public ResponseEntity<ResMovieDTO> getMovieById(@PathVariable Long id) {
-    ResMovieDTO movieDTO = moviesService.getMovieById(id);
-    
-    if (movieDTO == null) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // Trả về 404 nếu không tìm thấy phim
+    public ResponseEntity<ResMovieDTO> getMovieById(@PathVariable Long id) {
+        ResMovieDTO movieDTO = moviesService.getMovieById(id);
+        
+        if (movieDTO == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // Trả về 404 nếu không tìm thấy phim
+        }
+        
+        return ResponseEntity.ok(movieDTO); // Trả về phim nếu tìm thấy
     }
-    
-    return ResponseEntity.ok(movieDTO); // Trả về phim nếu tìm thấy
-}
 
     @GetMapping("/movies/upcoming")
     public ResponseEntity<List<ResMovieDTO>> getMoviesUpcoming()
@@ -156,5 +157,12 @@ public ResponseEntity<ResMovieDTO> getMovieById(@PathVariable Long id) {
     {
         moviesService.deleteMovie(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/movies/revenue/{id}")
+    public ResponseEntity<ResMovieRevenueDTO> getRevenue(@PathVariable long id)
+    {
+        ResMovieRevenueDTO revenueDTO = moviesService.getMovieRevenue(id);
+        return ResponseEntity.ok(revenueDTO);
     }
 }
