@@ -53,6 +53,7 @@ public class AuditoriumService {
         resAuditoriumDTO.setCapacity(saveAuditorium.getCapacity());
         resAuditoriumDTO.setName(saveAuditorium.getName());
         resAuditoriumDTO.setSeats(seatDTOs);  // Thêm danh sách ghế vào DTO
+        resAuditoriumDTO.setStatus(false);
     
         return resAuditoriumDTO;
     }
@@ -157,8 +158,11 @@ public class AuditoriumService {
         Auditorium auditorium = auditoriumsRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Auditorium not found with id: " + id));
 
-        List<Seat> seats = seatsRepository.findByAuditorium(auditorium);
+        Instant now = Instant.now();
+        boolean isScreeningActive = auditorium.getScreenings().stream()
+                .anyMatch(screening -> screening.getStartTime().isBefore(now) && screening.getEndTime().isAfter(now));
 
+        List<Seat> seats = seatsRepository.findByAuditorium(auditorium);
         List<ResSeatDTO> seatDTOs = convertToResSeatDTO(seats);
 
         ResAuditoriumDTO resAuditoriumDTO = new ResAuditoriumDTO();
@@ -166,6 +170,7 @@ public class AuditoriumService {
         resAuditoriumDTO.setName(auditorium.getName());
         resAuditoriumDTO.setCapacity(auditorium.getCapacity());
         resAuditoriumDTO.setSeats(seatDTOs); // Thêm danh sách ghế vào DTO
+        resAuditoriumDTO.setStatus(isScreeningActive);
 
     return resAuditoriumDTO;
     }
@@ -175,11 +180,15 @@ public class AuditoriumService {
     
         List<ResAuditoriumDTO> resAuditoriumDTOs = new ArrayList<>();
         for (Auditorium auditorium : auditoriums) {
+            Instant now = Instant.now();
+            boolean isScreeningActive = auditorium.getScreenings().stream()
+                .anyMatch(screening -> screening.getStartTime().isBefore(now) && screening.getEndTime().isAfter(now));
             ResAuditoriumDTO dto = new ResAuditoriumDTO();
             dto.setId(auditorium.getId());
             dto.setName(auditorium.getName());
             dto.setCapacity(auditorium.getCapacity());
             dto.setSeats(convertToResSeatDTO(seatsRepository.findByAuditorium(auditorium)));
+            dto.setStatus(isScreeningActive);
             resAuditoriumDTOs.add(dto);
         }
     

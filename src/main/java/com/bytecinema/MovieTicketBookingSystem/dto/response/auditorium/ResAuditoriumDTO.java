@@ -12,5 +12,6 @@ public class ResAuditoriumDTO {
     private long id;
     private String name;
     private int capacity;
+    private boolean status;
     List<ResSeatDTO> seats;
 }
