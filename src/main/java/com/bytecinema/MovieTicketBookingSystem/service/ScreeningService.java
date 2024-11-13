@@ -182,6 +182,13 @@ public class ScreeningService {
         return screening.getBookings().size();
     }
 
+    public int getSeatCountByScreeningIdThroughBooking(Long id) {
+        Screening screening = screeningsRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Screening not found with id" + id));
+
+        return screening.getBookings().stream().mapToInt(booking -> booking.getSeats().size()).sum();
+    }
+
     public List<ResScreeningDTO> getScreeningDTOByDay(LocalDate date) {
         Instant startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
         Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().minusSeconds(1);

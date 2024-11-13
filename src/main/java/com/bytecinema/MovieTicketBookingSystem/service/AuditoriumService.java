@@ -64,6 +64,12 @@ public class AuditoriumService {
         Auditorium auditorium = auditoriumsRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Auditorium not found with id: " + id));
 
+        List<Screening> screenings = auditorium.getScreenings();
+        if (!screenings.isEmpty())
+        {
+            throw new RuntimeException("Phòng chiếu đang được sử dụng");
+        }
+
         List<Auditorium> existedAuditoriums = auditoriumsRepository.findByNameIgnoreCase(req.getName());
         if (!existedAuditoriums.isEmpty() && !auditorium.getName().equals(req.getName()))   
         {
