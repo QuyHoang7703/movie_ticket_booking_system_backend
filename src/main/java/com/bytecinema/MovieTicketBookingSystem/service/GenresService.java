@@ -169,4 +169,15 @@ public class GenresService {
 
         return genreRepository.save(genre);
     }
+
+    public void deleteGenre(Long id) {
+        Genre genre = genreRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Genre not found with id: " + id));
+        List<MovieGenre> movieGenres = movieGenresRepository.findByGenreId(id);
+        if (!movieGenres.isEmpty())
+        {
+            throw new RuntimeException("Thể loại đã được sử dụng");
+        }
+        genreRepository.delete(genre);
+    }
 }

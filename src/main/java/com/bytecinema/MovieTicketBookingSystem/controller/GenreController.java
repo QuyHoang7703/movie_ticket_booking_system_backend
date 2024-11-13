@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,8 +50,9 @@ public class GenreController {
     @GetMapping("/genres/{id}")
     public ResponseEntity<ResGenreDTO> getGenre(@PathVariable Long id) {
          ResGenreDTO existedGenre = genresService.findGenreById(id);
-    return ResponseEntity.ok(existedGenre);
-}
+        return ResponseEntity.ok(existedGenre);
+    }
+    
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/genres/{id}")
     public ResponseEntity<ResGenreDTO> updateGenre(@PathVariable Long id,@Valid @RequestBody ReqUpdateGenreDTO updateGenreDTO) {
@@ -63,6 +65,14 @@ public class GenreController {
 
         return ResponseEntity.ok(genreDTO);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/genres/{id}")
+    public ResponseEntity<?> deleteGenre(@PathVariable Long id) {
+        genresService.deleteGenre(id);
+        return ResponseEntity.noContent().build();
+    }
+    
     @GetMapping("/genres")
     public ResponseEntity<List<ResGenreDTO>> getAllGenres()
     {

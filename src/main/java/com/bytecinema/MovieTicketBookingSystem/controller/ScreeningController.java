@@ -78,4 +78,11 @@ public class ScreeningController {
         Integer res = screeningService.getBookingCountByScreeningId(id);
         return ResponseEntity.ok(res);
     }
+
+    @GetMapping("/screening-seat-count/{id}")
+    public ResponseEntity<Integer> getSeatCountByScreeningIdThroughBooking(@PathVariable Long id)
+    {
+        Integer res = screeningService.getSeatCountByScreeningIdThroughBooking(id);
+        return ResponseEntity.ok(res);
+    }
 }
