@@ -17,7 +17,6 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1")
-@PreAuthorize("hasRole('ADMIN')")
 public class SeatController {
     private final SeatService seatService;
 
