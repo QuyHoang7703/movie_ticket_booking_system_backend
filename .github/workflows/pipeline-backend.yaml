@@ -30,7 +30,7 @@ jobs:
   unit-test:
     runs-on: ubuntu-latest
     name: Running Unit Test
-    services:
+#    services:
 #     db:
 #       image: minhquang3010/movie_booking_database:1.0
 #       env:
