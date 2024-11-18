@@ -38,7 +38,7 @@ public class BookingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(resBooking);
     }
 
-    @GetMapping("/bookings")
+    @GetMapping("/bookings/detail")
     public ResponseEntity<ResBooking> fetchBookingById(@RequestParam("bookingId") long bookingId) throws IdInValidException {
         return ResponseEntity.status(HttpStatus.OK).body(this.bookingService.getBookingById(bookingId));
     }
