@@ -19,8 +19,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.bytecinema.MovieTicketBookingSystem.domain.Movie;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.movie.ReqAddMovieDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.genre.ResGenreDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieAllRevenueDateDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieRevenueDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieRevenueDateDTO;
 import com.bytecinema.MovieTicketBookingSystem.service.MoviesService;
 import com.bytecinema.MovieTicketBookingSystem.service.S3Service;
 
@@ -28,6 +30,8 @@ import jakarta.validation.Valid;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+
+import java.time.Instant;
 import java.util.ArrayList;;
 
 @RestController
@@ -165,4 +169,35 @@ public class MovieController {
         ResMovieRevenueDTO revenueDTO = moviesService.getMovieRevenue(id);
         return ResponseEntity.ok(revenueDTO);
     }
+    @GetMapping("/movies/revenue")
+    public ResponseEntity<List<ResMovieRevenueDTO>> getRevenues()
+    {
+        List<ResMovieRevenueDTO> response = moviesService.getMoviesRevenue();
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/movies/revenue/{id}/month/{date}")
+    public ResponseEntity<List<ResMovieRevenueDateDTO>> getRevenueByIdAndMonth(@PathVariable long id, @PathVariable Instant date)
+    {
+        List<ResMovieRevenueDateDTO> response = moviesService.getMoviesRevenueByIdAndMonth(id, date);
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/movies/revenue/{id}/year/{date}")
+    public ResponseEntity<List<ResMovieRevenueDateDTO>> getRevenueByIdAndYear(@PathVariable long id, @PathVariable Instant date)
+    {
+        List<ResMovieRevenueDateDTO> response = moviesService.getMoviesRevenueByIdAndYear(id, date);
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/movies/revenue/year/{date}")
+    public ResponseEntity<List<ResMovieAllRevenueDateDTO>> getRevenuesByIdAndYear(@PathVariable Instant date)
+    {
+        List<ResMovieAllRevenueDateDTO> response = moviesService.getMoviesRevenuesByYear(date);
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/movies/revenue/month/{date}")
+    public ResponseEntity<List<ResMovieAllRevenueDateDTO>> getRevenuesByIdAndMonth(@PathVariable Instant date)
+    {
+        List<ResMovieAllRevenueDateDTO> response = moviesService.getMoviesRevenuesByMonth(date);
+        return ResponseEntity.ok(response);
+    }
+    
 }

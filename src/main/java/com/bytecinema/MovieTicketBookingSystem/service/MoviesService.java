@@ -8,9 +8,11 @@ import com.bytecinema.MovieTicketBookingSystem.domain.Images;
 import com.bytecinema.MovieTicketBookingSystem.domain.Movie;
 import com.bytecinema.MovieTicketBookingSystem.domain.MovieGenre;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.movie.ReqAddMovieDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieAllRevenueDateDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieGenreDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieRevenueDTO;
+import com.bytecinema.MovieTicketBookingSystem.dto.response.movie.ResMovieRevenueDateDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.screening.ResScreeningDTO;
 import com.bytecinema.MovieTicketBookingSystem.repository.GenreRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.ImagesRepository;
@@ -22,6 +24,10 @@ import java.util.List;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import com.bytecinema.MovieTicketBookingSystem.domain.Screening;
 
@@ -326,8 +332,11 @@ public class MoviesService {
         // Tính tổng số vé đã bán và doanh thu
         long totalTicketsSold = 0;
         BigDecimal totalRevenue = BigDecimal.ZERO;
+        long totalTicket = 0;
 
         for (Screening screening : movie.getScreenings()) {
+            var auditorium = screening.getAuditorium();
+            totalTicket += auditorium.getCapacity();
             for (Booking booking : screening.getBookings()) {
                 int ticketsCount = booking.getSeats().size();
                 totalTicketsSold += ticketsCount;
@@ -335,6 +344,259 @@ public class MoviesService {
             }
         }
 
-        return new ResMovieRevenueDTO(totalTicketsSold, totalRevenue);
+
+        var response = new ResMovieRevenueDTO();
+        response.setMovieId(movieId);
+        response.setMovieName(movie.getName());
+        response.setTotalRevenue(totalRevenue);
+        response.setTotalTicketsSold(totalTicketsSold);
+        response.setTotalTicket(totalTicket);
+
+        return response;
+    }
+    public List<ResMovieRevenueDTO> getMoviesRevenue() {
+        List<Movie> movies = movieRepository.findAll();
+        List<ResMovieRevenueDTO> revenueDTOList = new ArrayList<>();
+    
+        for (Movie movie : movies) {
+            long totalTicketsSold = 0;
+            BigDecimal totalRevenue = BigDecimal.ZERO;
+            long totalTicket = 0;
+            for (Screening screening : movie.getScreenings()) {
+                var auditorium = screening.getAuditorium();
+                totalTicket += auditorium.getCapacity();
+                for (Booking booking : screening.getBookings()) {
+                    int ticketsCount = booking.getSeats().size();
+                    totalTicketsSold += ticketsCount;
+                    totalRevenue = totalRevenue.add(screening.getTicketPrice().multiply(BigDecimal.valueOf(ticketsCount)));
+                }
+            }
+            var response = new ResMovieRevenueDTO();
+            response.setMovieId(movie.getId());
+            response.setMovieName(movie.getName());
+            response.setTotalRevenue(totalRevenue);
+            response.setTotalTicketsSold(totalTicketsSold);
+            response.setTotalTicket(totalTicket);
+
+            revenueDTOList.add(response);
+        }
+    
+        return revenueDTOList;
+    }
+    public List<ResMovieRevenueDateDTO> getMoviesRevenueByIdAndMonth(long movieId, Instant date) {
+        // Xác định tháng và năm từ `Instant`
+        LocalDate localDate = date.atZone(ZoneId.systemDefault()).toLocalDate();
+        int year = localDate.getYear();
+        int month = localDate.getMonthValue();
+    
+        // Lấy danh sách tất cả các ngày trong tháng
+        List<LocalDate> allDates = getAllDatesInMonth(year, month);
+    
+        List<ResMovieRevenueDateDTO> result = new ArrayList<>();
+        for (LocalDate day : allDates) {
+            // Tính tổng số vé đã bán và doanh thu trong ngày đó
+            BigDecimal totalRevenue = BigDecimal.ZERO;
+            long totalTicketsSold = 0;
+            long totalTicket = 0;
+    
+            Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new RuntimeException("Movie not found with id: " + movieId));
+    
+            for (Screening screening : movie.getScreenings()) {
+                if (screening.getStartTime().atZone(ZoneId.systemDefault()).toLocalDate().equals(day)) {
+                    var auditorium = screening.getAuditorium();
+                    totalTicket += auditorium.getCapacity();
+    
+                    for (Booking booking : screening.getBookings()) {
+                        int ticketsCount = booking.getSeats().size();
+                        totalTicketsSold += ticketsCount;
+                        totalRevenue = totalRevenue.add(screening.getTicketPrice().multiply(BigDecimal.valueOf(ticketsCount)));
+                    }
+                }
+            }
+    
+            // Tạo DTO cho ngày hiện tại
+            var response = new ResMovieRevenueDateDTO();
+            response.setMovieId(movieId);
+            response.setMovieName(movie.getName());
+            response.setTotalRevenue(totalRevenue);
+            response.setTotalTicketsSold(totalTicketsSold);
+            response.setTotalTicket(totalTicket);
+            response.setTime(day.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
+    
+            result.add(response);
+        }
+    
+        return result;
+    }
+    public List<ResMovieRevenueDateDTO> getMoviesRevenueByIdAndYear(long movieId, Instant date) {
+        // Lấy năm từ `Instant`
+        LocalDate localDate = date.atZone(ZoneId.systemDefault()).toLocalDate();
+        int year = localDate.getYear();
+    
+        // Lấy danh sách tất cả các tháng trong năm
+        List<YearMonth> allMonths = getAllMonthsInYear(year);
+    
+        List<ResMovieRevenueDateDTO> result = new ArrayList<>();
+        for (YearMonth yearMonth : allMonths) {
+            // Tính tổng số vé đã bán và doanh thu trong tháng đó
+            BigDecimal totalRevenue = BigDecimal.ZERO;
+            long totalTicketsSold = 0;
+            long totalTicket = 0;
+    
+            Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new RuntimeException("Movie not found with id: " + movieId));
+    
+            for (Screening screening : movie.getScreenings()) {
+                LocalDate screeningDate = screening.getStartTime().atZone(ZoneId.systemDefault()).toLocalDate();
+                YearMonth screeningMonth = YearMonth.from(screeningDate);
+    
+                if (screeningMonth.equals(yearMonth)) {
+                    var auditorium = screening.getAuditorium();
+                    totalTicket += auditorium.getCapacity();
+    
+                    for (Booking booking : screening.getBookings()) {
+                        int ticketsCount = booking.getSeats().size();
+                        totalTicketsSold += ticketsCount;
+                        totalRevenue = totalRevenue.add(screening.getTicketPrice().multiply(BigDecimal.valueOf(ticketsCount)));
+                    }
+                }
+            }
+    
+            // Tạo DTO cho tháng hiện tại
+            var response = new ResMovieRevenueDateDTO();
+            response.setMovieId(movieId);
+            response.setMovieName(movie.getName());
+            response.setTotalRevenue(totalRevenue);
+            response.setTotalTicketsSold(totalTicketsSold);
+            response.setTotalTicket(totalTicket);
+            //response.setTime(yearMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant()); // Lấy ngày đầu tháng
+            response.setTime(
+            yearMonth.atEndOfMonth().atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant()
+        );
+            result.add(response);
+        }
+    
+        return result;
+    }
+    public List<ResMovieAllRevenueDateDTO> getMoviesRevenuesByYear(Instant date) {
+        // Lấy năm từ `Instant`
+        LocalDate localDate = date.atZone(ZoneId.systemDefault()).toLocalDate();
+        int year = localDate.getYear();
+    
+        // Lấy danh sách tất cả các tháng trong năm
+        List<YearMonth> allMonths = getAllMonthsInYear(year);
+    
+        List<ResMovieAllRevenueDateDTO> result = new ArrayList<>();
+    
+        for (YearMonth yearMonth : allMonths) {
+            int month = yearMonth.getMonthValue();
+            BigDecimal totalRevenueAll = BigDecimal.ZERO;
+            long totalTicketsSoldAll = 0;
+            long totalTicketAll = 0;
+            List<Movie> movies = movieRepository.findAll(); // Lấy toàn bộ phim
+            for (Movie movie : movies) {
+                BigDecimal totalRevenue = BigDecimal.ZERO;
+                long totalTicketsSold = 0;
+                long totalTicket = 0;
+                for (Screening screening : movie.getScreenings()) {
+                    LocalDate screeningDate = screening.getStartTime().atZone(ZoneId.systemDefault()).toLocalDate();
+                    if (screeningDate.getYear() == year && screeningDate.getMonthValue() == month) {
+                        var auditorium = screening.getAuditorium();
+                        totalTicket += auditorium.getCapacity();
+    
+                        for (Booking booking : screening.getBookings()) {
+                            int ticketsCount = booking.getSeats().size();
+                            totalTicketsSold += ticketsCount;
+                            totalRevenue = totalRevenue.add(screening.getTicketPrice().multiply(BigDecimal.valueOf(ticketsCount)));
+                        }
+                    }
+                }
+                totalRevenueAll = totalRevenueAll.add(totalRevenue);
+                totalTicketsSoldAll += totalTicketsSold;
+                totalTicketAll += totalTicket;
+                
+            }
+            var response = new ResMovieAllRevenueDateDTO();
+                response.setTotalRevenue(totalRevenueAll);
+                response.setTotalTicketsSold(totalTicketsSoldAll);
+                response.setTotalTicket(totalTicketAll);
+                response.setTime(yearMonth.atEndOfMonth().atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
+    
+                result.add(response);
+        }
+    
+        return result;
+    }
+    public List<ResMovieAllRevenueDateDTO> getMoviesRevenuesByMonth(Instant date) {
+        // Xác định tháng và năm từ `Instant`
+        LocalDate localDate = date.atZone(ZoneId.systemDefault()).toLocalDate();
+        int year = localDate.getYear();
+        int month = localDate.getMonthValue();
+    
+        // Lấy danh sách tất cả các ngày trong tháng
+        List<LocalDate> allDates = getAllDatesInMonth(year, month);
+    
+        List<ResMovieAllRevenueDateDTO> result = new ArrayList<>();
+    
+        for (LocalDate day : allDates) {
+            BigDecimal totalRevenueAll = BigDecimal.ZERO;
+            long totalTicketsSoldAll = 0;
+            long totalTicketAll = 0;
+    
+            List<Movie> movies = movieRepository.findAll(); // Lấy toàn bộ phim
+            for (Movie movie : movies) {
+                BigDecimal totalRevenue = BigDecimal.ZERO;
+                long totalTicketsSold = 0;
+                long totalTicket = 0;
+    
+                for (Screening screening : movie.getScreenings()) {
+                    LocalDate screeningDate = screening.getStartTime().atZone(ZoneId.systemDefault()).toLocalDate();
+                    if (screeningDate.equals(day)) {
+                        var auditorium = screening.getAuditorium();
+                        totalTicket += auditorium.getCapacity();
+    
+                        for (Booking booking : screening.getBookings()) {
+                            int ticketsCount = booking.getSeats().size();
+                            totalTicketsSold += ticketsCount;
+                            totalRevenue = totalRevenue.add(screening.getTicketPrice().multiply(BigDecimal.valueOf(ticketsCount)));
+                        }
+                    }
+                }
+    
+                // Cộng dồn vào tổng số doanh thu, vé đã bán và tổng số vé của tất cả các phim
+                totalRevenueAll = totalRevenueAll.add(totalRevenue);
+                totalTicketsSoldAll += totalTicketsSold;
+                totalTicketAll += totalTicket;
+            }
+    
+            // Tạo DTO cho ngày hiện tại
+            var response = new ResMovieAllRevenueDateDTO();
+            response.setTotalRevenue(totalRevenueAll);
+            response.setTotalTicketsSold(totalTicketsSoldAll);
+            response.setTotalTicket(totalTicketAll);
+            response.setTime(day.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
+    
+            result.add(response);
+        }
+    
+        return result;
+    }
+    private List<LocalDate> getAllDatesInMonth(int year, int month) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        int daysInMonth = yearMonth.lengthOfMonth(); // Lấy số ngày trong tháng
+    
+        List<LocalDate> dates = new ArrayList<>();
+        for (int day = 1; day <= daysInMonth; day++) {
+            dates.add(LocalDate.of(year, month, day));
+        }
+        return dates;
+    }
+    private List<YearMonth> getAllMonthsInYear(int year) {
+        List<YearMonth> months = new ArrayList<>();
+        for (int month = 1; month <= 12; month++) {
+            months.add(YearMonth.of(year, month));
+        }
+        return months;
     }
 }
