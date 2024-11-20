@@ -46,6 +46,7 @@ public class ApplicationInitConfig {
                 user.setName("I AM ADMIN");
                 Role role = this.roleRepository.findByName("ADMIN").get();
                 user.setRole(role);
+                user.setVerified(true);
                 this.userRepository.save(user);
                 log.info("Finish initial database");
             }

@@ -58,16 +58,22 @@ public class BookingController {
             this.bookingService.sendOrderThroughEmail(request.getParameter("vnp_TxnRef"));
 //            return ResponseEntity.status(HttpStatus.OK).body(new ResponseInfo<>("Payment successful"));
             log.info("PAYMENT SUCCESSFULLY");
+//            return ResponseEntity.status(HttpStatus.FOUND)
+//                    .header(HttpHeaders.LOCATION, "http://localhost:3000/payment-success?transactionId=" + transactionCode)
+//                    .build();
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .header(HttpHeaders.LOCATION, "http://localhost:3000/payment-success?transactionId=" + transactionCode)
+                    .header(HttpHeaders.LOCATION, "https://byte-cinema-website.vercel.app/payment-success?transactionId=" + transactionCode)
                     .build();
 
         } else {
             this.bookingService.handlePaymentFailure(transactionCode);
 //            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseInfo<>("Payment unsuccessful"));
             log.info("PAYMENT UNSUCCESSFULLY");
+//            return ResponseEntity.status(HttpStatus.FOUND)
+//                    .header(HttpHeaders.LOCATION, "http://localhost:3000/payment-failure?transactionId=" + transactionCode)
+//                    .build();
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .header(HttpHeaders.LOCATION, "http://localhost:3000/payment-failure?transactionId=" + transactionCode)
+                    .header(HttpHeaders.LOCATION, "https://byte-cinema-website.vercel.app/payment-failure?transactionId=" + transactionCode)
                     .build();
         }
     }

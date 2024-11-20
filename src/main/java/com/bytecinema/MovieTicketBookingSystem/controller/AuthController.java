@@ -120,7 +120,7 @@ public class AuthController {
     @ApiMessage("Login successfully")
     public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO ReqLoginDTO) throws IdInValidException{
         if(!this.userService.handleGetUserByEmail(ReqLoginDTO.getEmail()).isVerified()){
-            throw new IdInValidException("User not found !!!");
+            throw new IdInValidException("User not found or not verify !!!");
         }
         //Load username and password into Security
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(ReqLoginDTO.getEmail(), ReqLoginDTO.getPassword());
