@@ -4,6 +4,7 @@ import com.amazonaws.services.codecommit.model.UserInfo;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqChangePasswordDTO;
 
 
+import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqUpdatePasswordDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.pagination.ResultPaginationDTO;
 import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
@@ -216,6 +217,30 @@ public class UserService {
         this.userRepository.save(currentUser);
 
         return this.convertToResUserInfoDTO(currentUser);
+
+    }
+
+    public void updatePassword(ReqUpdatePasswordDTO reqUpdatePasswordDTO) {
+        String email = SecurityUtil.getCurrentLogin().isPresent() ? SecurityUtil.getCurrentLogin().get() : null;
+        if(email==null) {
+            throw new RuntimeException("Access token not available");
+        }
+        Optional<User> optionalUser = this.userRepository.findByEmail(email);
+        if(!optionalUser.isPresent()) {
+            throw new RuntimeException("User not found");
+        }
+        User user = optionalUser.get();
+        if(!passwordEncoder.matches(reqUpdatePasswordDTO.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Current password does not match");
+        }
+        if(reqUpdatePasswordDTO.getCurrentPassword().equals(reqUpdatePasswordDTO.getNewPassword())){
+            throw new RuntimeException("New password does not match current password");
+        }
+        if(!reqUpdatePasswordDTO.getNewPassword().equals(reqUpdatePasswordDTO.getConfirmPassword())) {
+            throw new RuntimeException("Confirm password does not match new password");
+        }
+        user.setPassword(this.passwordEncoder.encode(reqUpdatePasswordDTO.getNewPassword()));
+        this.userRepository.save(user);
 
     }
 

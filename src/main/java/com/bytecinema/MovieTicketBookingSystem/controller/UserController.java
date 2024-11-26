@@ -1,6 +1,7 @@
 package com.bytecinema.MovieTicketBookingSystem.controller;
 
 import com.bytecinema.MovieTicketBookingSystem.domain.Role;
+import com.bytecinema.MovieTicketBookingSystem.dto.request.account.ReqUpdatePasswordDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.request.register.ReqUserInfoDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.pagination.ResultPaginationDTO;
 import com.bytecinema.MovieTicketBookingSystem.dto.response.register.ResUserInfoDTO;
@@ -12,9 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
     private final UserService userService;
     private final S3Service s3Service;
+    private final SecurityUtil securityUtil;
 
     @GetMapping("/users/{id}")
     @ApiMessage("Fetch user by ID")
@@ -91,6 +91,21 @@ public class UserController {
     public ResponseEntity<ResUserInfoDTO> updateInfoUser(@RequestParam(value="fileAvatar", required = false) MultipartFile file, @RequestPart("user_info") ReqUserInfoDTO userInfoDTO) throws IdInValidException {
         ResUserInfoDTO resUserInfoDTO  = this.userService.updateUserInfo(file, userInfoDTO);
         return ResponseEntity.ok(resUserInfoDTO);
+    }
+
+    @PatchMapping("/users/update-password")
+    @ApiMessage("Updated password")
+    public ResponseEntity<Void> updatePassword(@RequestBody ReqUpdatePasswordDTO reqUpdatePasswordDTO) {
+        this.userService.updatePassword(reqUpdatePasswordDTO);
+//        // Xóa access token và refresh token hiện có
+//        ResponseCookie accCookies = this.securityUtil.createAccessCookie("access_token", null, 0);
+//        ResponseCookie resCookies = this.securityUtil.createRefreshCookie("refresh_token", null, 0);
+
+        return ResponseEntity.status(HttpStatus.OK)
+//                .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+//                .header(HttpHeaders.SET_COOKIE, resCookies.toString())
+                .body(null);
+
     }
 
 

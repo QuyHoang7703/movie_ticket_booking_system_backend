@@ -1,4 +1,5 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
+import aj.org.objectweb.asm.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -44,6 +45,7 @@ public class MoviesService {
     private final S3Service s3Service;
     private final RedisTemplate<String, ResMovieDTO> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, List<ResMovieDTO>> redisTemplateMovie;
 
     @Transactional
     public ResMovieDTO addMovie(ReqAddMovieDTO addMovieDTO)
@@ -223,16 +225,24 @@ public class MoviesService {
         movieRepository.delete(movie);
     }
 
-    @Cacheable(cacheNames = "movies", key = "'all-movies'")
+//    @Cacheable(cacheNames = "movies", key = "'all-movies'")
     public List<ResMovieDTO> getAllMovies()
     {
+        Object rawJson = redisTemplateMovie.opsForValue().get("movies:all-movies");
+        // Kiểm tra trong redis đã có data chưa
+        if(rawJson != null){
+            List<ResMovieDTO> resMoviesDTO = objectMapper.convertValue(rawJson, List.class);
+            return resMoviesDTO;
+        }
+
         List<Movie> movies = movieRepository.findAll();
         
         List<ResMovieDTO> movieDTOs = movies.stream().map(movie -> {
             return convertMovieToResMovieDTO(movie);
         })
         .collect(Collectors.toList());
-
+        // Thêm data vào redis
+        redisTemplateMovie.opsForValue().set("movies:all-movies", movieDTOs);
         return movieDTOs;
     }
 
