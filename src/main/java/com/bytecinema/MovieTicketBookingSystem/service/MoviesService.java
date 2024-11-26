@@ -1,4 +1,7 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +42,8 @@ public class MoviesService {
     private final MovieGenresRepository movieGenresRepository;
     private final GenreRepository genreRepository;
     private final S3Service s3Service;
+    private final RedisTemplate<String, ResMovieDTO> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public ResMovieDTO addMovie(ReqAddMovieDTO addMovieDTO)
@@ -218,7 +223,7 @@ public class MoviesService {
         movieRepository.delete(movie);
     }
 
-    
+    @Cacheable(cacheNames = "movies", key = "'all-movies'")
     public List<ResMovieDTO> getAllMovies()
     {
         List<Movie> movies = movieRepository.findAll();
@@ -232,12 +237,17 @@ public class MoviesService {
     }
 
     public ResMovieDTO getMovieById(Long id) {
+        Object rawJson = redisTemplate.opsForValue().get("movie:" + id);
+        if(rawJson != null){
+            return objectMapper.convertValue(rawJson, ResMovieDTO.class);
+        }
         Movie movie = movieRepository.findById(id).orElse(null);
     
         if (movie == null) {
             return null; 
         }
         ResMovieDTO dto = convertMovieToResMovieDTO(movie);
+        redisTemplate.opsForValue().set("movie:" + id, dto);
         return dto;
     }
     public List<ResMovieDTO> getMoviesUpcoming()
