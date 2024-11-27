@@ -19,7 +19,7 @@ public class CorsConfig {
                 // Arrays.asList("*"));
 
         // các method nào đc kết nối
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
         // các phần header được phép gửi lên
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "x-no-retry", "Access-Control-Allow-Origin"));
