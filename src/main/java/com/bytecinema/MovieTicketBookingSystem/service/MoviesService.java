@@ -1,4 +1,5 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
+import com.bytecinema.MovieTicketBookingSystem.service.redisService.MovieRedisService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -48,7 +49,7 @@ public class MoviesService {
     private final RedisTemplate<String, ResMovieDTO> redisTemplateResMovieDTO;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, List<Long>> redisTemplateMovieIds;
-
+    private final MovieRedisService movieRedisService;
     @Transactional
     public ResMovieDTO addMovie(ReqAddMovieDTO addMovieDTO)
     {
@@ -121,15 +122,8 @@ public class MoviesService {
         List<String> imagePaths = addMovieDTO.getImagePaths();
         resMovieDTO.setImagePaths(imagePaths);
 
-        // Đồng bộ Redis
-        if (redisTemplateMovieIds.hasKey("movies:all-ids")) {
-            List<Long> ids = objectMapper.convertValue(redisTemplateMovieIds.opsForValue().get("movies:all-ids"), new TypeReference<List<Long>>() {});
-            ids.add(savedMovie.getId());
-            log.info("Id of movies: " + ids);
-            redisTemplateMovieIds.opsForValue().set("movies:all-ids", ids);
-            redisTemplateResMovieDTO.opsForValue().set("movie:" + savedMovie.getId(), resMovieDTO);
-        }
-
+        // Thêm vào Redis
+        movieRedisService.addMovie(resMovieDTO);
 
         return resMovieDTO;
     }
@@ -217,12 +211,10 @@ public class MoviesService {
             log.info("Image path: null");
         }
 
-
         ResMovieDTO res = convertMovieToResMovieDTO(savedMovie);
 
         //Update trong redis
-        redisTemplateResMovieDTO.delete("movie:" + id);
-        redisTemplateResMovieDTO.opsForValue().set("movie:" + id, res);
+        movieRedisService.updateMovie(res);
 
         // Trả về thông tin phim đã cập nhật
         return res;
@@ -261,28 +253,19 @@ public class MoviesService {
         }
 
         // Xóa movie trong redis
-        Object rawJson = redisTemplateMovieIds.opsForValue().get("movies:all-ids");
-        ArrayList<Long> ids = objectMapper.convertValue(rawJson, new TypeReference<ArrayList<Long>>() {});
-        ids.remove(id);
-        redisTemplateMovieIds.opsForValue().set("movies:all-ids", ids);
-        redisTemplateResMovieDTO.delete("movie:" + id);
+        movieRedisService.deleteMovie(id);
     }
 
 //    @Cacheable(cacheNames = "movies", key = "'all-movies'")
     public List<ResMovieDTO> getAllMovies()
     {
-        Object rawJson = redisTemplateMovieIds.opsForValue().get("movies:all-ids");
-        log.info("Get ids: " + rawJson);
-        // Kiểm tra trong redis đã có data chưa
-        if(rawJson != null){
-            ArrayList<Long> ids = objectMapper.convertValue(rawJson, new TypeReference<ArrayList<Long>>() {});
-            // Lấy dữ liệu từng movie từ Redis
-            List<ResMovieDTO> res = ids.stream()
-                    .map(id -> objectMapper.convertValue(redisTemplateResMovieDTO.opsForValue().get("movie:" + id), ResMovieDTO.class))
-                    .toList();
-            return res;
+        // Kiểm tra trong redis
+        List<ResMovieDTO> resMovieDTOsInRedis = movieRedisService.getAllMovies();
+        if(resMovieDTOsInRedis != null){
+            return resMovieDTOsInRedis;
         }
 
+        // Lấy data từ database
         List<Movie> movies = movieRepository.findAll();
 
         // Lưu danh sách IDs vào Redis
@@ -301,17 +284,21 @@ public class MoviesService {
     }
 
     public ResMovieDTO getMovieById(Long id) {
-        Object rawJson = redisTemplateResMovieDTO.opsForValue().get("movie:" + id);
-        if(rawJson != null){
-            return objectMapper.convertValue(rawJson, ResMovieDTO.class);
+        // Kiểm tra data đã có trong redis ?
+        ResMovieDTO resMovieDTO = movieRedisService.getMovieById(id);
+        if(resMovieDTO != null){
+            return resMovieDTO;
         }
+        // Lấy data từ database
         Movie movie = movieRepository.findById(id).orElse(null);
     
         if (movie == null) {
             return null; 
         }
         ResMovieDTO dto = convertMovieToResMovieDTO(movie);
+        // Lưu data vào redis
         redisTemplateResMovieDTO.opsForValue().set("movie:" + id, dto);
+
         return dto;
     }
     public List<ResMovieDTO> getMoviesUpcoming()

@@ -23,7 +23,7 @@ public class ReqAddMovieDTO {
     @NotNull(message = "Director cannot be null")
     private String director;
 
-    @Size(max = 500, message = "Description should not exceed 500 characters")
+    @Size(max = 1000, message = "Description should not exceed 1000 characters")
     private String description;
 
     @NotNull(message = "Duration cannot be null")
