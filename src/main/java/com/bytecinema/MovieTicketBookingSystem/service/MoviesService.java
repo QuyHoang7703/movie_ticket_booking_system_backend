@@ -1,6 +1,6 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
-import aj.org.objectweb.asm.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -34,18 +34,20 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import com.bytecinema.MovieTicketBookingSystem.domain.Screening;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MoviesService {
     private final MovieRepository movieRepository;
     private final ImagesRepository imagesRepository;
     private final MovieGenresRepository movieGenresRepository;
     private final GenreRepository genreRepository;
     private final S3Service s3Service;
-    private final RedisTemplate<String, ResMovieDTO> redisTemplate;
+    private final RedisTemplate<String, ResMovieDTO> redisTemplateResMovieDTO;
     private final ObjectMapper objectMapper;
-    private final RedisTemplate<String, List<ResMovieDTO>> redisTemplateMovie;
+    private final RedisTemplate<String, List<Long>> redisTemplateMovieIds;
 
     @Transactional
     public ResMovieDTO addMovie(ReqAddMovieDTO addMovieDTO)
@@ -113,6 +115,15 @@ public class MoviesService {
 
                 imagesRepository.save(image);
             }
+        }
+
+        // Đồng bộ Redis
+        if (redisTemplateMovieIds.hasKey("movies:all-ids")) {
+            List<Long> ids = objectMapper.convertValue(redisTemplateMovieIds.opsForValue().get("movies:all-ids"), new TypeReference<List<Long>>() {});
+            ids.add(savedMovie.getId());
+            log.info("Id of movies: " + ids);
+            redisTemplateMovieIds.opsForValue().set("movies:all-ids", ids);
+            redisTemplateResMovieDTO.opsForValue().set("movie:" + savedMovie.getId(), resMovieDTO);
         }
 
         return resMovieDTO;
@@ -187,8 +198,10 @@ public class MoviesService {
             }
         }
 
+        ResMovieDTO res = convertMovieToResMovieDTO(savedMovie);
+
         // Trả về thông tin phim đã cập nhật
-        return convertMovieToResMovieDTO(savedMovie);
+        return res;
     }
 
     @Transactional
@@ -220,34 +233,41 @@ public class MoviesService {
         if(urlImages != null && !urlImages.isEmpty()){
             this.s3Service.deleteFiles(urlImages);
         }
-
-        // Xóa phim
-        movieRepository.delete(movie);
     }
 
 //    @Cacheable(cacheNames = "movies", key = "'all-movies'")
     public List<ResMovieDTO> getAllMovies()
     {
-        Object rawJson = redisTemplateMovie.opsForValue().get("movies:all-movies");
+        Object rawJson = redisTemplateMovieIds.opsForValue().get("movies:all-ids");
         // Kiểm tra trong redis đã có data chưa
         if(rawJson != null){
-            List<ResMovieDTO> resMoviesDTO = objectMapper.convertValue(rawJson, List.class);
-            return resMoviesDTO;
+            List<Long> ids = objectMapper.convertValue(rawJson, new TypeReference<List<Long>>() {});
+            // Lấy dữ liệu từng movie từ Redis
+            List<ResMovieDTO> res = ids.stream()
+                    .map(id -> objectMapper.convertValue(redisTemplateResMovieDTO.opsForValue().get("movie:" + id), ResMovieDTO.class))
+                    .toList();
+            return res;
         }
 
         List<Movie> movies = movieRepository.findAll();
-        
-        List<ResMovieDTO> movieDTOs = movies.stream().map(movie -> {
-            return convertMovieToResMovieDTO(movie);
-        })
-        .collect(Collectors.toList());
-        // Thêm data vào redis
-        redisTemplateMovie.opsForValue().set("movies:all-movies", movieDTOs);
+
+        // Lưu danh sách IDs vào Redis
+        List<Long> ids = movies.stream().map(Movie::getId).toList();
+        redisTemplateMovieIds.opsForValue().set("movies:all-ids", ids);
+
+        // Lưu từng movie vào Redis và convert thành DTO
+        List<ResMovieDTO> movieDTOs = movies.stream()
+                .map(movie -> {
+                    ResMovieDTO dto = convertMovieToResMovieDTO(movie);
+                    redisTemplateResMovieDTO.opsForValue().set("movie:" + movie.getId(), dto);
+                    return dto;
+                }).toList();
+
         return movieDTOs;
     }
 
     public ResMovieDTO getMovieById(Long id) {
-        Object rawJson = redisTemplate.opsForValue().get("movie:" + id);
+        Object rawJson = redisTemplateResMovieDTO.opsForValue().get("movie:" + id);
         if(rawJson != null){
             return objectMapper.convertValue(rawJson, ResMovieDTO.class);
         }
@@ -257,7 +277,7 @@ public class MoviesService {
             return null; 
         }
         ResMovieDTO dto = convertMovieToResMovieDTO(movie);
-        redisTemplate.opsForValue().set("movie:" + id, dto);
+        redisTemplateResMovieDTO.opsForValue().set("movie:" + id, dto);
         return dto;
     }
     public List<ResMovieDTO> getMoviesUpcoming()
