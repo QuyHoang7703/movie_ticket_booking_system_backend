@@ -117,6 +117,10 @@ public class MoviesService {
             }
         }
 
+        // Thêm images vào
+        List<String> imagePaths = addMovieDTO.getImagePaths();
+        resMovieDTO.setImagePaths(imagePaths);
+
         // Đồng bộ Redis
         if (redisTemplateMovieIds.hasKey("movies:all-ids")) {
             List<Long> ids = objectMapper.convertValue(redisTemplateMovieIds.opsForValue().get("movies:all-ids"), new TypeReference<List<Long>>() {});
@@ -125,6 +129,7 @@ public class MoviesService {
             redisTemplateMovieIds.opsForValue().set("movies:all-ids", ids);
             redisTemplateResMovieDTO.opsForValue().set("movie:" + savedMovie.getId(), resMovieDTO);
         }
+
 
         return resMovieDTO;
     }
@@ -141,13 +146,6 @@ public class MoviesService {
         boolean isScreeningExist = movie.getScreenings().size() > 0;
         if (isScreeningExist) {
             throw new RuntimeException("Không thể cập nhật phim đã chiếu");
-        }
-        
-        // Xóa image cũ rồi mới update
-        List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
-                .toList();
-        if(urlImages != null && !urlImages.isEmpty()){
-            this.s3Service.deleteFiles(urlImages);
         }
 
         List<Movie> existedMovies = movieRepository.findByNameIgnoreCase(updateMovieDTO.getName());
@@ -170,10 +168,10 @@ public class MoviesService {
         // Lưu phim đã cập nhật
         Movie savedMovie = movieRepository.save(movie);
 
-        // Cập nhật thể loại
-        movieGenresRepository.deleteByMovieId(id); // Xóa các thể loại cũ
         List<ResMovieGenreDTO> resMoviGenreDTO = new ArrayList<>();
         if (updateMovieDTO.getGenreIds() != null && !updateMovieDTO.getGenreIds().isEmpty()) {
+            // Cập nhật thể loại
+            movieGenresRepository.deleteByMovieId(id); // Xóa các thể loại cũ
             for (Long genreId : updateMovieDTO.getGenreIds()) {
                 Genre genre = genreRepository.findById(genreId)
                     .orElseThrow(() -> new RuntimeException("Genre not found with id: " + genreId));
@@ -185,20 +183,46 @@ public class MoviesService {
 
                 resMoviGenreDTO.add(new ResMovieGenreDTO(genre.getName(), genre.getDescription(), genre.getId()));
             }
+        }else{
+            log.info("genre null");
         }
 
         // Cập nhật hình ảnh
-        imagesRepository.deleteByMovieId(id); // Xóa hình ảnh cũ
+        log.info("New Image path: "+updateMovieDTO.getImagePaths());
         if (updateMovieDTO.getImagePaths() != null && !updateMovieDTO.getImagePaths().isEmpty()) {
+
+            imagesRepository.deleteByMovieId(id); // Xóa hình ảnh cũ
+            // Xóa ảnh trên s3
+            List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
+                    .toList();
+            if(urlImages != null && !urlImages.isEmpty()){
+                log.info("Deleted images to delete from S3.");
+                this.s3Service.deleteFiles(urlImages);
+            }else {
+                // Log nếu không có ảnh nào để xóa
+                log.info("No images to delete from S3.");
+            }
+            List<Images> newImages = new ArrayList<>();
             for (String imagePath : updateMovieDTO.getImagePaths()) {
                 Images image = new Images();
                 image.setImagePath(imagePath);
                 image.setMovie(savedMovie);
-                imagesRepository.save(image);
+                newImages.add(image);
+
             }
+            imagesRepository.saveAll(newImages);
+            savedMovie.setImages(newImages);
+
+        }else{
+            log.info("Image path: null");
         }
 
+
         ResMovieDTO res = convertMovieToResMovieDTO(savedMovie);
+
+        //Update trong redis
+        redisTemplateResMovieDTO.delete("movie:" + id);
+        redisTemplateResMovieDTO.opsForValue().set("movie:" + id, res);
 
         // Trả về thông tin phim đã cập nhật
         return res;
@@ -227,21 +251,31 @@ public class MoviesService {
             imagesRepository.deleteAll(images);
         }
 
-        // Xóa image
+        movieRepository.delete(movie);
+
+        // Xóa image trên s3
         List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
                 .toList();
         if(urlImages != null && !urlImages.isEmpty()){
             this.s3Service.deleteFiles(urlImages);
         }
+
+        // Xóa movie trong redis
+        Object rawJson = redisTemplateMovieIds.opsForValue().get("movies:all-ids");
+        ArrayList<Long> ids = objectMapper.convertValue(rawJson, new TypeReference<ArrayList<Long>>() {});
+        ids.remove(id);
+        redisTemplateMovieIds.opsForValue().set("movies:all-ids", ids);
+        redisTemplateResMovieDTO.delete("movie:" + id);
     }
 
 //    @Cacheable(cacheNames = "movies", key = "'all-movies'")
     public List<ResMovieDTO> getAllMovies()
     {
         Object rawJson = redisTemplateMovieIds.opsForValue().get("movies:all-ids");
+        log.info("Get ids: " + rawJson);
         // Kiểm tra trong redis đã có data chưa
         if(rawJson != null){
-            List<Long> ids = objectMapper.convertValue(rawJson, new TypeReference<List<Long>>() {});
+            ArrayList<Long> ids = objectMapper.convertValue(rawJson, new TypeReference<ArrayList<Long>>() {});
             // Lấy dữ liệu từng movie từ Redis
             List<ResMovieDTO> res = ids.stream()
                     .map(id -> objectMapper.convertValue(redisTemplateResMovieDTO.opsForValue().get("movie:" + id), ResMovieDTO.class))
@@ -639,4 +673,5 @@ public class MoviesService {
         }
         return months;
     }
+
 }

@@ -79,7 +79,7 @@ public class MovieController {
         ResMovieDTO savedMovie = moviesService.addMovie(addMovieDTO);
 
         // Thiết lập đường dẫn ảnh cho đối tượng phản hồi
-        savedMovie.setImagePaths(pathImages);
+//        savedMovie.setImagePaths(pathImages);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(savedMovie);
     }
