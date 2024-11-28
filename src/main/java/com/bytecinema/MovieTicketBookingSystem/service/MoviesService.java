@@ -23,6 +23,8 @@ import com.bytecinema.MovieTicketBookingSystem.repository.GenreRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.ImagesRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.MovieGenresRepository;
 import com.bytecinema.MovieTicketBookingSystem.repository.MovieRepository;
+
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
@@ -185,7 +187,6 @@ public class MoviesService {
         log.info("New Image path: "+updateMovieDTO.getImagePaths());
         if (updateMovieDTO.getImagePaths() != null && !updateMovieDTO.getImagePaths().isEmpty()) {
 
-            imagesRepository.deleteByMovieId(id); // Xóa hình ảnh cũ
             // Xóa ảnh trên s3
             List<String> urlImages = movie.getImages().stream().map(image -> image.getImagePath())
                     .toList();
@@ -196,6 +197,9 @@ public class MoviesService {
                 // Log nếu không có ảnh nào để xóa
                 log.info("No images to delete from S3.");
             }
+
+            imagesRepository.deleteByMovieId(id); // Xóa hình ảnh cũ
+
             List<Images> newImages = new ArrayList<>();
             for (String imagePath : updateMovieDTO.getImagePaths()) {
                 Images image = new Images();
@@ -261,7 +265,8 @@ public class MoviesService {
     {
         // Kiểm tra trong redis
         List<ResMovieDTO> resMovieDTOsInRedis = movieRedisService.getAllMovies();
-        if(resMovieDTOsInRedis != null){
+        if(resMovieDTOsInRedis != null && !resMovieDTOsInRedis.isEmpty()){
+            log.info("RES:" + resMovieDTOsInRedis.toString());
             return resMovieDTOsInRedis;
         }
 
@@ -270,13 +275,13 @@ public class MoviesService {
 
         // Lưu danh sách IDs vào Redis
         List<Long> ids = movies.stream().map(Movie::getId).toList();
-        redisTemplateMovieIds.opsForValue().set("movies:all-ids", ids);
+        redisTemplateMovieIds.opsForValue().set("movies:all-ids", ids, 20, TimeUnit.MINUTES);
 
         // Lưu từng movie vào Redis và convert thành DTO
         List<ResMovieDTO> movieDTOs = movies.stream()
                 .map(movie -> {
                     ResMovieDTO dto = convertMovieToResMovieDTO(movie);
-                    redisTemplateResMovieDTO.opsForValue().set("movie:" + movie.getId(), dto);
+                    redisTemplateResMovieDTO.opsForValue().set("movie:" + movie.getId(), dto, 20, TimeUnit.MINUTES);
                     return dto;
                 }).toList();
 
@@ -297,7 +302,7 @@ public class MoviesService {
         }
         ResMovieDTO dto = convertMovieToResMovieDTO(movie);
         // Lưu data vào redis
-        redisTemplateResMovieDTO.opsForValue().set("movie:" + id, dto);
+        redisTemplateResMovieDTO.opsForValue().set("movie:" + id, dto, 20, TimeUnit.MINUTES);
 
         return dto;
     }

@@ -14,6 +14,7 @@ import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
 import com.bytecinema.MovieTicketBookingSystem.util.VnPayUtil;
 import com.bytecinema.MovieTicketBookingSystem.util.constant.StatusPayment;
 import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
@@ -47,6 +49,8 @@ public class BookingService {
     private final VnPayConfig vnPayConfig;
     private final SeatService seatService;
     private final EmailService emailService;
+    private final RedisTemplate<String, ResultPaginationDTO> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     public Booking createBooking(ReqBooking reqBooking) throws IdInValidException {
         Booking booking = new Booking();
@@ -257,6 +261,13 @@ public class BookingService {
     public ResultPaginationDTO getAllGeneralCompletedBookings(Specification<Booking> spec, Pageable pageable, boolean isAlreadyScreened) {
         String email = SecurityUtil.getCurrentLogin().isPresent() ? SecurityUtil.getCurrentLogin().get() : null;
 
+//        Object rawJson = redisTemplate.opsForValue().get("paidBooking_" + email + "_" + isAlreadyScreened + "_" + pageable.getPageNumber()+1 + "_" + pageable.getPageSize() + ":");
+//        if(rawJson != null) {
+//            ResultPaginationDTO res = objectMapper.convertValue(rawJson, ResultPaginationDTO.class);
+//            log.info("Get order from redis");
+//            return res;
+//        }
+
         Specification<Booking> newSpec = (root, query, criteriaBuilder) -> {
             Join<Booking, User> joinUser = root.join("user");
 
@@ -272,6 +283,8 @@ public class BookingService {
             }
 
             Predicate isPaidPredicate = criteriaBuilder.equal(root.get("statusPayment"), StatusPayment.PAID);
+
+
 
             return criteriaBuilder.and(emailPredicate, statusCompletedBooking, isPaidPredicate);
         };
@@ -301,6 +314,10 @@ public class BookingService {
                 .toList();
 
         res.setResult(resList);
+
+//        // Lưu paid booking vào redis
+//        String key = "paidBooking_" + email + "_" + isAlreadyScreened + "_" + pageable.getPageNumber()+1 + "_" + pageable.getPageSize() + ":";
+//        redisTemplate.opsForValue().set(key, res);
 
         return res;
     }

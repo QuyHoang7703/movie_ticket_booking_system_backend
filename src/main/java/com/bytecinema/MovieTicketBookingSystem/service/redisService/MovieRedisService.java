@@ -34,11 +34,17 @@ public class MovieRedisService {
         if(rawJson != null){
             ArrayList<Long> ids = objectMapper.convertValue(rawJson, new TypeReference<ArrayList<Long>>() {});
             // Lấy dữ liệu từng movie từ Redis
+            if (ids.stream().anyMatch(id -> this.getMovieById(id) == null)) {
+                return null; // Trả về null nếu có giá trị null
+            }
+
             List<ResMovieDTO> res = ids.stream()
-                    .map(id -> objectMapper.convertValue(redisTemplateResMovieDTO.opsForValue().get("movie:" + id), ResMovieDTO.class))
+                    .map(id ->this.getMovieById(id))
                     .toList();
+
             return res;
         }
+
         return null;
     }
 
