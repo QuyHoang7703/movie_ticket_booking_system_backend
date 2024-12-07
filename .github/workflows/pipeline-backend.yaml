@@ -34,29 +34,29 @@ jobs:
     runs-on: ubuntu-latest
     name: Running Unit Test
     services:
-#     db:
-#       image: minhquang3010/movie_booking_database:1.0
-#       env:
-#         MYSQL_ROOT_PASSWORD: admin123
-#         MYSQL_DATABASE: movie_ticket_booking
-#         MYSQL_USER: movie_ticket_booking
-#         MYSQL_PASSWORD: movie_ticket_booking
-#       ports:
-#         - 3306:3306
-#       options: >-
-#         --health-cmd="mysqladmin ping --silent"
-#         --health-interval=5s
-#         --health-timeout=3s
-#         --health-retries=5
-      redis:
-        image: redis:latest
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping || exit 1"
-          --health-interval=5s
-          --health-timeout=3s
-          --health-retries=5
+     db:
+       image: minhquang3010/movie_booking_database:1.0
+       env:
+         MYSQL_ROOT_PASSWORD: admin123
+         MYSQL_DATABASE: movie_ticket_booking
+         MYSQL_USER: movie_ticket_booking
+         MYSQL_PASSWORD: movie_ticket_booking
+       ports:
+         - 3306:3306
+       options: >-
+         --health-cmd="mysqladmin ping --silent"
+         --health-interval=5s
+         --health-timeout=3s
+         --health-retries=5
+#      redis:
+#        image: redis:latest
+#        ports:
+#          - 6379:6379
+#        options: >-
+#          --health-cmd="redis-cli ping || exit 1"
+#          --health-interval=5s
+#          --health-timeout=3s
+#          --health-retries=5
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -71,20 +71,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y redis-tools
-#      - name: Wait for MySQL to be ready
-#        run: |
-#         # Chờ MySQL service khởi động hoàn tất
-#         while ! mysqladmin ping -h "127.0.0.1" --silent; do
-#           echo "Waiting for MySQL..."
-#           sleep 5
-#         done
-      - name: Wait for Redis to be ready
+      - name: Wait for MySQL to be ready
         run: |
-          # Chờ Redis service khởi động hoàn tất
-          while ! redis-cli -h "127.0.0.1" ping | grep PONG > /dev/null; do
-            echo "Waiting for Redis..."
-            sleep 5
-          done
+         # Chờ MySQL service khởi động hoàn tất
+         while ! mysqladmin ping -h "127.0.0.1" --silent; do
+           echo "Waiting for MySQL..."
+           sleep 5
+         done
+#      - name: Wait for Redis to be ready
+#        run: |
+#          # Chờ Redis service khởi động hoàn tất
+#          while ! redis-cli -h "127.0.0.1" ping | grep PONG > /dev/null; do
+#            echo "Waiting for Redis..."
+#            sleep 5
+#          done
       - name: Run Unit Test
         env:
           AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}

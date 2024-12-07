@@ -1,6 +1,5 @@
 package com.bytecinema.MovieTicketBookingSystem.service;
 
-import com.bytecinema.MovieTicketBookingSystem.service.redisService.GenreRedisService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +20,6 @@ import java.util.List;
 public class GenresService {
     private final GenreRepository genreRepository;
     private final MovieGenresRepository movieGenresRepository;
-    private final GenreRedisService genreRedisService;
     public Genre addGenre(String name, String description)
     {
         List<Genre> existedGenre = genreRepository.findByNameIgnoreCase(name);

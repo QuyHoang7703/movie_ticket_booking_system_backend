@@ -11,9 +11,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
@@ -53,5 +50,5 @@ public class ApplicationInitConfig {
 
         };
     }
-    
+
 }

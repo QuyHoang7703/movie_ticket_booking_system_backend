@@ -51,6 +51,7 @@ public class User {
     private boolean verified;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String token;
+    private Instant passwordUpdatedAt;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
@@ -62,8 +63,8 @@ public class User {
 
     @PrePersist
     public void handleBeforeCreated(){
-      
         this.createAt = Instant.now();
+        this.passwordUpdatedAt = Instant.now();
     }
 
     @PreUpdate

@@ -42,7 +42,6 @@ public class MovieController {
     private final MoviesService moviesService;
     private final S3Service s3Service;
 
-
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value="/movies", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createMovie(

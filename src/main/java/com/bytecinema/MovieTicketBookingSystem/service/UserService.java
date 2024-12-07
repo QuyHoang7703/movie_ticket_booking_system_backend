@@ -41,7 +41,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
     private final OtpService otpService;
     private final S3Service s3Service;
    
@@ -240,6 +239,7 @@ public class UserService {
             throw new RuntimeException("Confirm password does not match new password");
         }
         user.setPassword(this.passwordEncoder.encode(reqUpdatePasswordDTO.getNewPassword()));
+        user.setPasswordUpdatedAt(Instant.now());
         this.userRepository.save(user);
 
     }

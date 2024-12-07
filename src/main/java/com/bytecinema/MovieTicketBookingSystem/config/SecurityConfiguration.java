@@ -1,10 +1,16 @@
 package com.bytecinema.MovieTicketBookingSystem.config;
 
+import java.time.Instant;
 import java.util.Map;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import com.bytecinema.MovieTicketBookingSystem.domain.User;
+import com.bytecinema.MovieTicketBookingSystem.service.UserService;
+import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,16 +44,14 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfiguration {
     @Value("${bytecinema.jwt.base64-secret}")
     private String jwtKey;
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    private final UserService userService;
 
-   @Bean
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
     http
         .csrf(c -> c.disable())
@@ -96,11 +100,21 @@ public class SecurityConfiguration {
                 // Lấy role từ claims
                 Map<String, Object> claims = decodedJwt.getClaims();
                 String role = (String) claims.get("role");
+                Instant iat = (Instant) claims.get("iat");
+                String email = (String) claims.get("sub");
+                User user = this.userService.handleGetUserByEmail(email);
+                if(user == null) {
+                    throw new RuntimeException("User not found");
+                }
+                if(user.getPasswordUpdatedAt().isAfter(iat)) {
+                    throw new RuntimeException("Access token invalid");
+                }
 
-                // Bạn có thể thêm logic ở đây để xử lý role nếu cần thiết
                 System.out.println(">>> Role from JWT: " + role);
                  // In ra toàn bộ claims để kiểm tra
                 System.out.println(">>> Decoded JWT claims: " + claims);
+//                System.out.println(">>> IAT JWT claims: " + iat);
+//                System.out.println(">>> getPasswordUpdatedAt " + user.getPasswordUpdatedAt());
 
                 return decodedJwt; // Trả về token đã decode
             } catch (Exception e) {
@@ -110,7 +124,7 @@ public class SecurityConfiguration {
         };
     }
 
-     @Bean
+    @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
         grantedAuthoritiesConverter.setAuthorityPrefix(""); //QUyền hạn được lấy ra ko cần có tiền tố gì trước nó

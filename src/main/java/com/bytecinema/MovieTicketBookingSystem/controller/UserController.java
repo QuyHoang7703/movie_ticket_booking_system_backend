@@ -97,13 +97,13 @@ public class UserController {
     @ApiMessage("Updated password")
     public ResponseEntity<Void> updatePassword(@RequestBody ReqUpdatePasswordDTO reqUpdatePasswordDTO) {
         this.userService.updatePassword(reqUpdatePasswordDTO);
-//        // Xóa access token và refresh token hiện có
-//        ResponseCookie accCookies = this.securityUtil.createAccessCookie("access_token", null, 0);
-//        ResponseCookie resCookies = this.securityUtil.createRefreshCookie("refresh_token", null, 0);
-
+        // Xóa access token và refresh token hiện có
+        ResponseCookie accCookies = this.securityUtil.createAccessCookie("access_token", null, 0);
+        ResponseCookie resCookies = this.securityUtil.createRefreshCookie("refresh_token", null, 0);
+        System.out.println(">>>>> Logout account username: ");
         return ResponseEntity.status(HttpStatus.OK)
-//                .header(HttpHeaders.SET_COOKIE, accCookies.toString())
-//                .header(HttpHeaders.SET_COOKIE, resCookies.toString())
+                .header(HttpHeaders.SET_COOKIE, accCookies.toString())
+                .header(HttpHeaders.SET_COOKIE, resCookies.toString())
                 .body(null);
 
     }

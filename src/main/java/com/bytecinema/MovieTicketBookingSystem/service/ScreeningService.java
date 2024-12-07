@@ -13,6 +13,7 @@ import com.bytecinema.MovieTicketBookingSystem.domain.Auditorium;
 import com.bytecinema.MovieTicketBookingSystem.domain.Screening;
 import java.time.Instant;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
@@ -25,7 +26,6 @@ public class ScreeningService {
     private final MovieRepository movieRepository;
     private final AuditoriumsRepository auditoriumsRepository;
     private final BookingService bookingService;
-
     public ResScreeningDTO addScreening(ReqAddScreeningDTO request) {
         if (request.getStartTime().isBefore(Instant.now())) {
             throw new RuntimeException("Start time must be in the future");
