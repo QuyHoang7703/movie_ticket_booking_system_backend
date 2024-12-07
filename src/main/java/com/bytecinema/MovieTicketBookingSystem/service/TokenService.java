@@ -61,7 +61,7 @@ public class TokenService {
         String subject = "Yêu cầu đặt lại mật khẩu";
 
         // Tạo liên kết chứa token để người dùng nhấn vào => chuyển đến fe xử lý
-        String resetPasswordLink = "http://localhost:3000/reset-password?token=" + token;
+        String resetPasswordLink = "https://byte-cinema-website.vercel.app/reset-password?token=" + token;
 
         // Tạo nội dung email từ template HTML
         Context context = new Context();
