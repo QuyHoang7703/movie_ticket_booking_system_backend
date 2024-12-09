@@ -60,7 +60,7 @@ public class AuthController {
 
     @PostMapping("auth/register")
     @ApiMessage("Register a new user")
-    public ResponseEntity<ResponseInfo<String>> createUser(@RequestBody ReqRegisterDTO registerDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo<String>> createUser(@RequestBody ReqRegisterDTO registerDTO) throws Exception{
         if(this.userService.checkAvailableEmail(registerDTO.getEmail())){
             User user = this.userService.handleGetUserByEmail(registerDTO.getEmail());
             if(!user.isVerified()) {
@@ -99,7 +99,7 @@ public class AuthController {
     }
 
     @PostMapping("/auth/verify-otp")
-    public ResponseEntity<ResponseInfo<String>> verify(@RequestBody ReqVerifyDTO verifyDTO) throws IdInValidException{
+    public ResponseEntity<ResponseInfo<String>> verify(@RequestBody ReqVerifyDTO verifyDTO) throws Exception {
         if(!this.userService.checkAvailableEmail(verifyDTO.getEmail())){
             throw new IdInValidException("Email not found");
         }
@@ -109,7 +109,7 @@ public class AuthController {
     }
 
     @PostMapping("/auth/resend")
-    public ResponseEntity<ResponseInfo<String>> resendOTP(@RequestParam String email) throws IdInValidException{
+    public ResponseEntity<ResponseInfo<String>> resendOTP(@RequestParam String email) throws Exception{
         this.otpService.resendOtp(email);
         return ResponseEntity.ok(new ResponseInfo<>("Resend OTP"));
 

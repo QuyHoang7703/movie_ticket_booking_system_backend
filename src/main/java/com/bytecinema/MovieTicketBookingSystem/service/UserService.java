@@ -26,6 +26,7 @@ import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.security.Security;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -44,7 +45,7 @@ public class UserService {
     private final OtpService otpService;
     private final S3Service s3Service;
    
-    public User handleRegisterUser(ReqRegisterDTO registerDTO) throws IdInValidException{
+    public User handleRegisterUser(ReqRegisterDTO registerDTO) throws IdInValidException, IOException {
         Optional<Role> optionalRole = this.roleRepository.findById(registerDTO.getRoleId());
         if(!optionalRole.isPresent()) {
             throw new IdInValidException("Role is invalid");
@@ -54,7 +55,7 @@ public class UserService {
         user.setEmail(registerDTO.getEmail());
         user.setPassword(registerDTO.getPassword());
         user.setRole(role);
-        user.setExpirationTime(Instant.now().plus(2, ChronoUnit.MINUTES));
+        user.setExpirationTime(Instant.now().plus(3, ChronoUnit.MINUTES));
         String otp = this.otpService.generateOTP();
         
         String otpDecoded = this.passwordEncoder.encode(otp);
@@ -239,7 +240,7 @@ public class UserService {
             throw new RuntimeException("Confirm password does not match new password");
         }
         user.setPassword(this.passwordEncoder.encode(reqUpdatePasswordDTO.getNewPassword()));
-        user.setPasswordUpdatedAt(Instant.now());
+//        user.setPasswordUpdatedAt(Instant.now());
         this.userRepository.save(user);
 
     }

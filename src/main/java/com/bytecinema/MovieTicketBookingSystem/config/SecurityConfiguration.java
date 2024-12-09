@@ -1,16 +1,12 @@
 package com.bytecinema.MovieTicketBookingSystem.config;
 
-import java.time.Instant;
 import java.util.Map;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import com.bytecinema.MovieTicketBookingSystem.domain.User;
 import com.bytecinema.MovieTicketBookingSystem.service.UserService;
-import com.bytecinema.MovieTicketBookingSystem.util.error.IdInValidException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,10 +16,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -32,14 +24,10 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-
 import com.bytecinema.MovieTicketBookingSystem.util.SecurityUtil;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
-// import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+
 
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
@@ -100,21 +88,19 @@ public class SecurityConfiguration {
                 // Lấy role từ claims
                 Map<String, Object> claims = decodedJwt.getClaims();
                 String role = (String) claims.get("role");
-                Instant iat = (Instant) claims.get("iat");
-                String email = (String) claims.get("sub");
-                User user = this.userService.handleGetUserByEmail(email);
-                if(user == null) {
-                    throw new RuntimeException("User not found");
-                }
-                if(user.getPasswordUpdatedAt().isAfter(iat)) {
-                    throw new RuntimeException("Access token invalid");
-                }
+//                Instant iat = (Instant) claims.get("iat");
+//                String email = (String) claims.get("sub");
+//                User user = this.userService.handleGetUserByEmail(email);
+//                if(user == null) {
+//                    throw new RuntimeException("User not found");
+//                }
+//                if(user.getPasswordUpdatedAt().isAfter(iat)) {
+//                    throw new RuntimeException("Access token invalid");
+//                }
 
                 System.out.println(">>> Role from JWT: " + role);
                  // In ra toàn bộ claims để kiểm tra
                 System.out.println(">>> Decoded JWT claims: " + claims);
-//                System.out.println(">>> IAT JWT claims: " + iat);
-//                System.out.println(">>> getPasswordUpdatedAt " + user.getPasswordUpdatedAt());
 
                 return decodedJwt; // Trả về token đã decode
             } catch (Exception e) {

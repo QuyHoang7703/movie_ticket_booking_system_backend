@@ -1,10 +1,70 @@
-/*body {*/
-/*    font-family: 'Helvetica', 'Arial', sans-serif;*/
-/*    margin: 0;*/
-/*    padding: 0;*/
-/*    background-color: #f9f9f9;*/
-/*    color: #333;*/
+/*!*body {*!*/
+/*!*    font-family: 'Helvetica', 'Arial', sans-serif;*!*/
+/*!*    margin: 0;*!*/
+/*!*    padding: 0;*!*/
+/*!*    background-color: #f9f9f9;*!*/
+/*!*    color: #333;*!*/
+/*!*}*!*/
+/*.email-container {*/
+/*    max-width: 600px;*/
+/*    margin: 30px auto;*/
+/*    background-color: #ffffff;*/
+/*    border: 1px solid #ddd;*/
+/*    border-radius: 10px;*/
+/*    overflow: hidden;*/
+/*    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);*/
 /*}*/
+/*.header {*/
+/*    background-color: #092B4B;*/
+/*    color: #ffffff;*/
+/*    text-align: left;*/
+/*    padding: 20px;*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*}*/
+/*.logo {*/
+/*    max-width: 100px;*/
+/*    margin-right: 20px;*/
+/*}*/
+/*.title {*/
+/*    font-size: 24px;*/
+/*    font-weight: bold;*/
+/*}*/
+/*.section {*/
+/*    padding: 20px;*/
+/*    line-height: 1.6;*/
+/*    border-bottom: 1px solid #ddd; !* Đường ngăn cách giữa các phần *!*/
+/*}*/
+/*.section:last-child {*/
+/*    border-bottom: none; !* Bỏ đường ngăn cách cho phần cuối cùng *!*/
+/*}*/
+/*.details {*/
+/*    display: flex;*/
+/*    justify-content: space-between;*/
+/*    margin-bottom: 10px;*/
+/*    font-size: 16px;*/
+/*}*/
+/*.details span {*/
+/*    font-weight: bold;*/
+/*    min-width: 150px; !* Chiều rộng tối thiểu cho nhãn *!*/
+/*}*/
+/*.details span.value {*/
+/*    flex: 1;*/
+/*    text-align: right; !* Căn phải cho giá trị *!*/
+/*    margin-left: 10px; !* Khoảng cách giữa nhãn và giá trị *!*/
+/*}*/
+/*.footer {*/
+/*    background-color: #092B4B;*/
+/*    color: #ffffff;*/
+/*    text-align: center;*/
+/*    padding: 15px;*/
+/*    font-size: 14px;*/
+/*}*/
+/*.footer p {*/
+/*    margin: 0;*/
+/*}*/
+
+/* Email Container */
 .email-container {
     max-width: 600px;
     margin: 30px auto;
@@ -14,6 +74,8 @@
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
+/* Header */
 .header {
     background-color: #092B4B;
     color: #ffffff;
@@ -22,37 +84,64 @@
     display: flex;
     align-items: center;
 }
+
 .logo {
     max-width: 100px;
     margin-right: 20px;
 }
+
 .title {
     font-size: 24px;
     font-weight: bold;
 }
+
+/* Section Styling */
 .section {
     padding: 20px;
     line-height: 1.6;
-    border-bottom: 1px solid #ddd; /* Đường ngăn cách giữa các phần */
+    border-bottom: 1px solid #ddd;
 }
+
 .section:last-child {
-    border-bottom: none; /* Bỏ đường ngăn cách cho phần cuối cùng */
+    border-bottom: none;
 }
+
+/* Details */
 .details {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
-    font-size: 16px;
+    font-size: 18px;
 }
+
 .details span {
     font-weight: bold;
-    min-width: 150px; /* Chiều rộng tối thiểu cho nhãn */
+    min-width: 150px;
 }
+
 .details span.value {
     flex: 1;
-    text-align: right; /* Căn phải cho giá trị */
-    margin-left: 10px; /* Khoảng cách giữa nhãn và giá trị */
+    text-align: right;
+    margin-left: 10px;
 }
+
+/* OTP Container */
+.otp-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.otp-code {
+    font-size: 32px;
+    font-weight: bold;
+    color: #092B4B;
+    background: #f0f8ff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+/* Footer */
 .footer {
     background-color: #092B4B;
     color: #ffffff;
@@ -60,6 +149,7 @@
     padding: 15px;
     font-size: 14px;
 }
+
 .footer p {
     margin: 0;
 }

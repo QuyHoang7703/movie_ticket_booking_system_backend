@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác Nhận Tài Khoản</title>
+    <style th:text="${cssContent}">
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header .logo {
+            max-width: 150px;
+        }
+        .header .title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #092B4B;
+            margin-top: 10px;
+        }
+        .section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            color: #333333;
+            font-size: 18px;
+        }
+        .section p {
+            color: #555555;
+            font-size: 16px;
+        }
+        .otp-container {
+            margin: 20px 0;
+        }
+        .otp-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #092B4B;
+            background: #f0f8ff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #888888;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div class="header">
+        <img src="https://movieticketbooking.s3.ap-southeast-2.amazonaws.com/byte_cinema.png" alt="Logo" class="logo">
+        <div class="title">XÁC NHẬN TÀI KHOẢN</div>
+    </div>
+
+    <div class="section">
+        <h3>Xin chào, <span class="user-name" th:text="${email}">Tên người dùng</span>!</h3>
+        <p>Cảm ơn bạn đã đăng ký tài khoản tại hệ thống của chúng tôi.</p>
+        <p>Vui lòng sử dụng mã OTP bên dưới để xác nhận tài khoản của bạn:</p>
+        <div class="otp-container">
+            <span class="otp-code" th:text="${otpCode}">123456</span>
+        </div>
+        <p><strong>Lưu ý:</strong> Mã OTP này chỉ có hiệu lực trong vòng <span th:text="${otpExpiration}">5 phút</span>.</p>
+    </div>
+
+    <div class="footer">
+        <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
+        <p>Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi!</p>
+    </div>
+</div>
+</body>
+</html>

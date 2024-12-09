@@ -113,7 +113,6 @@ public class BookingService {
         resBooking.setNation(movie.getNation());
         resBooking.setLanguage(movie.getLanguage());
 
-
         if(booking.getTransactionCode() != null){
             resBooking.setTransactionCode(booking.getTransactionCode());
         }
@@ -272,8 +271,6 @@ public class BookingService {
             }
 
             Predicate isPaidPredicate = criteriaBuilder.equal(root.get("statusPayment"), StatusPayment.PAID);
-
-
 
             return criteriaBuilder.and(emailPredicate, statusCompletedBooking, isPaidPredicate);
         };
