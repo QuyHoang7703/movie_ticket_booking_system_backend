@@ -248,7 +248,7 @@ public class BookingService {
         res.setFormattedTotalPrice(this.formatCurrency(booking.getTicketPrice()));
         res.setNameAuditorium(booking.getScreening().getAuditorium().getName());
         res.setStartTime(booking.getScreening().getStartTime());
-        res.setPaidTime(booking.getScreening().getEndTime());
+        res.setPaidTime(booking.getPaymentTime());
 
         return res;
     }

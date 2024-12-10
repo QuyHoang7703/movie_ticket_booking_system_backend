@@ -19,12 +19,12 @@ public class CorsConfig {
                 // Arrays.asList("*"));
 
         // các method nào đc kết nối
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH"));
 
         // các phần header được phép gửi lên
 //        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "x-no-retry", "Access-Control-Allow-Origin"));
          configuration.setAllowedHeaders(Arrays.asList("*"));
-        // configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Methods", "Authorization", "Content-Type", "Accept", "x-no-retry"));
+         configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Methods", "Authorization", "Content-Type", "Accept", "x-no-retry"));
 
 
         // gửi kèm cookies hay không
@@ -34,6 +34,7 @@ public class CorsConfig {
         // thời gian pre-flight request có thể cache (tính theo seconds)
 //        configuration.setMaxAge(3600L);
         configuration.setMaxAge(Duration.ofDays(3600L));
+//        configuration.setMaxAge(Duration.ofSeconds(300));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         // cấu hình cors cho tất cả api

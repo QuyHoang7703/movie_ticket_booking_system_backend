@@ -12,9 +12,9 @@ public class ResGeneralCompletedBookingDTO {
     private int seatsNumber;
     private String formattedTotalPrice;
     private String nameAuditorium;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm dd-MM-yyy", timezone = "GMT+7")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm dd-MM-yyy", timezone = "GMT+0")
     private Instant startTime;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm dd-MM-yyy", timezone = "GMT+7")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm dd-MM-yyy", timezone = "GMT+0")
     private Instant paidTime;
 
 }
